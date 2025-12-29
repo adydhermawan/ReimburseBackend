@@ -40,28 +40,7 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => (function() {
-                    // List of possible locations for CA bundle
-                    $paths = [
-                        // Local project file (relative to config/database.php)
-                        realpath(__DIR__ . '/../storage/tidb-ca.pem'),
-                        
-                        // Common System Paths
-                        '/etc/pki/tls/certs/ca-bundle.crt',
-                        '/etc/ssl/certs/ca-certificates.crt',
-                        '/etc/ssl/ca-bundle.pem',
-                        '/usr/local/share/ca-certificates/cacert.pem',
-                        '/usr/local/etc/openssl/cert.pem',
-                    ];
-                    
-                    foreach ($paths as $path) {
-                        if ($path && file_exists($path)) {
-                            return $path;
-                        }
-                    }
-                    
-                    return null;
-                })(),
+                PDO::MYSQL_ATTR_SSL_CA => __DIR__ . '/../storage/tidb-ca.pem',
                 PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
             ]) : [],
         ],
