@@ -37,9 +37,17 @@ class PdfReportService
         // Clean filename (remove spaces and special chars)
         $filename = preg_replace('/[^a-zA-Z0-9_\/.-]/', '_', $filename);
 
-        // Save to storage
-        // Save to storage
-        Storage::put($filename, $pdf->output());
+        // Save to storage using stream to avoid null byte error
+        $content = $pdf->output();
+        $stream = fopen('php://temp', 'r+');
+        fwrite($stream, $content);
+        rewind($stream);
+
+        Storage::put($filename, $stream);
+
+        if (is_resource($stream)) {
+            fclose($stream);
+        }
 
         // Update report record
         $report->update([
