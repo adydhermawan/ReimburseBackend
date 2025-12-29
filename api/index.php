@@ -18,12 +18,12 @@ if (isset($_ENV['VERCEL_ENV']) || isset($_SERVER['VERCEL_ENV'])) {
         header('Content-Type: application/json');
         echo json_encode([
             'success' => true, 
-            'message' => 'Vercel deployment is current (v5)',
+            'message' => 'Vercel deployment is current (v6)',
             'timestamp' => date('Y-m-d H:i:s'),
             'php_version' => PHP_VERSION,
             'request_uri' => $_SERVER['REQUEST_URI'],
             'request_method' => $_SERVER['REQUEST_METHOD'],
-            'commit' => 'v5-request-debug'
+            'commit' => 'v6-pathinfo-fix'
         ]);
         exit;
     }
