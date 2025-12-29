@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 */
 if (isset($_ENV['VERCEL_ENV']) || isset($_SERVER['VERCEL_ENV'])) {
     
+    // Register the Composer autoloader...
+    require __DIR__ . '/../vendor/autoload.php';
+
     // Function to recursively adjust paths
     $storagePath = '/tmp/storage';
     if (!is_dir($storagePath)) {
