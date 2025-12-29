@@ -117,6 +117,11 @@ if (isset($_ENV['VERCEL_ENV']) || isset($_SERVER['VERCEL_ENV'])) {
     }
 
     try {
+        // IMPORTANT FIX: Vercel sets PATH_INFO to the path AFTER /api (e.g., /auth/login)
+        // but Laravel expects the full path including /api prefix.
+        // By unsetting PATH_INFO, Laravel will use REQUEST_URI which has the correct full path.
+        unset($_SERVER['PATH_INFO']);
+        
         // Register the Composer autoloader...
         require __DIR__ . '/../vendor/autoload.php';
 
