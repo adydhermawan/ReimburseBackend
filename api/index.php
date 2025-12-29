@@ -13,6 +13,76 @@ use Illuminate\Http\Request;
 |
 */
 if (isset($_ENV['VERCEL_ENV']) || isset($_SERVER['VERCEL_ENV'])) {
+    
+    // --- DEBUGGING DATABASE CONNECTION ---
+    // Access this via /api/test-db-connection to debug
+    if (strpos($_SERVER['REQUEST_URI'], 'test-db-connection') !== false) {
+        header('Content-Type: text/plain');
+        echo "=== TiDB Connection Debugger ===\n\n";
+        
+        $host = $_ENV['DB_HOST'] ?? 'NOT SET';
+        $port = $_ENV['DB_PORT'] ?? '4000';
+        $db   = $_ENV['DB_DATABASE'] ?? 'test';
+        $user = $_ENV['DB_USERNAME'] ?? 'root';
+        $pass = $_ENV['DB_PASSWORD'] ?? '';
+        
+        echo "Config:\nHost: $host\nPort: $port\nUser: $user\nDatabase: $db\n\n";
+        
+        // Scenario 1: Standard (No SSL Options)
+        echo "1. Attempting connection WITHOUT SSL options...\n";
+        try {
+            $dsn = "mysql:host=$host;port=$port;dbname=$db";
+            $pdo = new PDO($dsn, $user, $pass);
+            echo "SUCCESS!\n";
+        } catch (PDOException $e) {
+            echo "FAILED: " . $e->getMessage() . "\n";
+        }
+        echo "\n";
+
+        // Scenario 2: SSL Verify = False
+        echo "2. Attempting connection with SSL_VERIFY_SERVER_CERT = false...\n";
+        try {
+            $dsn = "mysql:host=$host;port=$port;dbname=$db;ssl-mode=VERIFY_IDENTITY"; // Try forcing ssl-mode in DSN
+            $options = [
+                PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
+            ];
+            $pdo = new PDO($dsn, $user, $pass, $options);
+            echo "SUCCESS!\n";
+        } catch (PDOException $e) {
+            echo "FAILED: " . $e->getMessage() . "\n";
+        }
+        echo "\n";
+        
+        // Scenario 3: System CA
+        echo "3. Attempting connection with System CA...\n";
+        $ca = collect([
+            '/etc/pki/tls/certs/ca-bundle.crt',
+            '/etc/ssl/certs/ca-certificates.crt',
+            '/etc/ssl/ca-bundle.pem',
+            '/usr/local/share/ca-certificates/cacert.pem',
+        ])->first(fn($path) => file_exists($path));
+        
+        echo "Detected CA Path: " . ($ca ?? 'NONE') . "\n";
+        
+        if ($ca) {
+            try {
+                $options = [
+                    PDO::MYSQL_ATTR_SSL_CA => $ca,
+                    PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => true,
+                ];
+                $pdo = new PDO($dsn, $user, $pass, $options);
+                echo "SUCCESS!\n";
+            } catch (PDOException $e) {
+                echo "FAILED: " . $e->getMessage() . "\n";
+            }
+        } else {
+             echo "SKIPPED (No CA found)\n";
+        }
+        
+        exit;
+    }
+    // --- END DEBUGGING ---
+    
     try {
         // Register the Composer autoloader...
         require __DIR__ . '/../vendor/autoload.php';
