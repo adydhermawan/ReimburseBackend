@@ -27,6 +27,77 @@ Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
+Route::get('/debug-upload-methods', function () {
+    $results = [];
+    $disk = config('filesystems.default'); 
+
+    // Method 1: Simple String
+    try {
+        $start = microtime(true);
+        Illuminate\Support\Facades\Storage::put('debug_string.txt', 'Simple string content');
+        $results['method_1_string'] = ['success' => true, 'time' => microtime(true) - $start, 'url' => Illuminate\Support\Facades\Storage::url('debug_string.txt')];
+    } catch (\Throwable $e) {
+        $results['method_1_string'] = ['success' => false, 'error' => $e->getMessage()];
+    }
+
+    // Method 2: Stream (Text)
+    try {
+        $start = microtime(true);
+        $stream = fopen('php://temp', 'r+');
+        fwrite($stream, 'Stream content');
+        rewind($stream);
+        Illuminate\Support\Facades\Storage::put('debug_stream.txt', $stream);
+        if (is_resource($stream)) fclose($stream);
+        $results['method_2_stream_text'] = ['success' => true, 'time' => microtime(true) - $start, 'url' => Illuminate\Support\Facades\Storage::url('debug_stream.txt')];
+    } catch (\Throwable $e) {
+        $results['method_2_stream_text'] = ['success' => false, 'error' => $e->getMessage()];
+    }
+
+    // Method 3: Stream (Binary/PDF header)
+    try {
+        $start = microtime(true);
+        $content = "%PDF-1.4\n%\n1 0 obj\n<<\n/Type /Catalog\n>>\nendobj"; 
+        $stream = fopen('php://temp', 'r+');
+        fwrite($stream, $content);
+        rewind($stream);
+        Illuminate\Support\Facades\Storage::put('debug_stream_binary.pdf', $stream);
+        if (is_resource($stream)) fclose($stream);
+        $results['method_3_stream_binary'] = ['success' => true, 'time' => microtime(true) - $start, 'url' => Illuminate\Support\Facades\Storage::url('debug_stream_binary.pdf')];
+    } catch (\Throwable $e) {
+        $results['method_3_stream_binary'] = ['success' => false, 'error' => $e->getMessage()];
+    }
+
+    // Method 4: Temp File (putFile)
+    try {
+        $start = microtime(true);
+        $tempFile = stream_get_meta_data(tmpfile())['uri'];
+        file_put_contents($tempFile, 'Temp file content');
+        $path = Illuminate\Support\Facades\Storage::putFile('debug_uploaded_files', new \Illuminate\Http\File($tempFile));
+        $results['method_4_putFile'] = ['success' => true, 'time' => microtime(true) - $start, 'url' => Illuminate\Support\Facades\Storage::url($path)];
+    } catch (\Throwable $e) {
+        $results['method_4_putFile'] = ['success' => false, 'error' => $e->getMessage()];
+    }
+
+     // Method 5: File Handle
+    try {
+        $start = microtime(true);
+        $tempFile = tempnam(sys_get_temp_dir(), 'pdf');
+        file_put_contents($tempFile, "%PDF-1.4\nFake PDF Content");
+        $handle = fopen($tempFile, 'r');
+        Illuminate\Support\Facades\Storage::put('debug_file_handle.pdf', $handle);
+        if (is_resource($handle)) fclose($handle);
+        $results['method_5_file_handle'] = ['success' => true, 'time' => microtime(true) - $start, 'url' => Illuminate\Support\Facades\Storage::url('debug_file_handle.pdf')];
+    } catch (\Throwable $e) {
+        $results['method_5_file_handle'] = ['success' => false, 'error' => $e->getMessage()];
+    }
+
+    return response()->json([
+        'default_disk' => $disk,
+        'config_dump' => config("filesystems.disks.{$disk}"),
+        'results' => $results
+    ]);
+});
+
 
 
 Route::get('/test-connection', function () {
