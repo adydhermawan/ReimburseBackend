@@ -15,21 +15,22 @@ use Illuminate\Http\Request;
 if (isset($_ENV['VERCEL_ENV']) || isset($_SERVER['VERCEL_ENV'])) {
     // CRITICAL FIX: Vercel sets PATH_INFO to the path AFTER /api (e.g., /auth/login)
     // but Laravel expects the full path including /api prefix.
-    // By unsetting PATH_INFO, Laravel will use REQUEST_URI which has the correct full path.
-    // This MUST be done at the very beginning before any code that uses Request::capture()
-    unset($_SERVER['PATH_INFO']);
+    // Set PATH_INFO to REQUEST_URI (minus query string) so Laravel sees the full path.
+    $requestUri = $_SERVER['REQUEST_URI'];
+    $queryPos = strpos($requestUri, '?');
+    $_SERVER['PATH_INFO'] = $queryPos !== false ? substr($requestUri, 0, $queryPos) : $requestUri;
     
     // Quick debug endpoint - bypasses Laravel entirely to verify deployment is current
     if ($_SERVER['REQUEST_URI'] === '/api/vercel-test' || $_SERVER['REQUEST_URI'] === '/api/vercel-test/') {
         header('Content-Type: application/json');
         echo json_encode([
             'success' => true, 
-            'message' => 'Vercel deployment is current (v7)',
+            'message' => 'Vercel deployment is current (v8)',
             'timestamp' => date('Y-m-d H:i:s'),
             'php_version' => PHP_VERSION,
             'request_uri' => $_SERVER['REQUEST_URI'],
             'request_method' => $_SERVER['REQUEST_METHOD'],
-            'commit' => 'v7-pathinfo-at-start'
+            'commit' => 'v8-set-pathinfo'
         ]);
         exit;
     }
