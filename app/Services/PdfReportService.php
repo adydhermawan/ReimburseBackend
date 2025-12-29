@@ -38,7 +38,8 @@ class PdfReportService
         $filename = preg_replace('/[^a-zA-Z0-9_\/.-]/', '_', $filename);
 
         // Save to storage
-        Storage::disk('public')->put($filename, $pdf->output());
+        // Save to storage
+        Storage::put($filename, $pdf->output());
 
         // Update report record
         $report->update([
@@ -58,6 +59,6 @@ class PdfReportService
             return null;
         }
 
-        return Storage::disk('public')->path($report->pdf_path);
+        return null; // Local path not supported on cloud storage
     }
 }

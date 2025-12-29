@@ -65,7 +65,7 @@ class ReportController extends Controller
                 'message' => 'PDF Generated successfully',
                 'data' => [
                     'pdf_path' => $path,
-                    'pdf_url' => url('storage/' . $path)
+                    'pdf_url' => Storage::url($path)
                 ]
             ]);
         } catch (\Exception $e) {
@@ -118,7 +118,7 @@ class ReportController extends Controller
             ], 403);
         }
 
-        if (!$report->pdf_path || !Storage::disk('public')->exists($report->pdf_path)) {
+        if (!$report->pdf_path || !Storage::exists($report->pdf_path)) {
             return response()->json([
                 'success' => false,
                 'message' => 'PDF belum tersedia',
@@ -127,6 +127,6 @@ class ReportController extends Controller
 
         $filename = 'Reimburse_' . $report->period_start->format('Y-m') . '.pdf';
 
-        return Storage::disk('public')->download($report->pdf_path, $filename);
+        return Storage::download($report->pdf_path, $filename);
     }
 }
