@@ -13,6 +13,36 @@ use Illuminate\Http\Request;
 |
 */
 if (isset($_ENV['VERCEL_ENV']) || isset($_SERVER['VERCEL_ENV'])) {
+    
+    // --- TEMPORARY: CREATE ADMIN USER ---
+    // Access via /api/create-admin to create the first admin user
+    // DELETE THIS BLOCK AFTER USE!
+    if (strpos($_SERVER['REQUEST_URI'], 'create-admin') !== false) {
+        require __DIR__ . '/../vendor/autoload.php';
+        $app = require __DIR__ . '/../bootstrap/app.php';
+        $app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+        
+        $email = 'admin@recashly.com';
+        $password = 'recashly2024';
+        
+        $user = \App\Models\User::updateOrCreate(
+            ['email' => $email],
+            [
+                'name' => 'Admin',
+                'password' => bcrypt($password),
+                'is_admin' => true,
+            ]
+        );
+        
+        header('Content-Type: text/plain');
+        echo "Admin Created/Updated!\n";
+        echo "Email: $email\n";
+        echo "Password: $password\n";
+        echo "\n*** DELETE THIS ROUTE AFTER LOGIN! ***\n";
+        exit;
+    }
+    // --- END TEMPORARY ---
+    
     try {
         // Register the Composer autoloader...
         require __DIR__ . '/../vendor/autoload.php';
