@@ -84,7 +84,7 @@ class ReimbursementController extends Controller
             );
 
             // Store image
-            $imagePath = $request->file('image')->store('receipts', 'public');
+            $imagePath = $request->file('image')->store('receipts');
 
             // Create reimbursement
             $reimbursement = Reimbursement::create([
@@ -175,10 +175,11 @@ class ReimbursementController extends Controller
             // Update image if provided
             if ($request->hasFile('image')) {
                 // Delete old image
+
                 if ($reimbursement->image_path) {
-                    Storage::disk('public')->delete($reimbursement->image_path);
+                    Storage::delete($reimbursement->image_path);
                 }
-                $reimbursement->image_path = $request->file('image')->store('receipts', 'public');
+                $reimbursement->image_path = $request->file('image')->store('receipts');
             }
 
             // Update other fields
@@ -277,7 +278,7 @@ class ReimbursementController extends Controller
 
         // Delete associated image
         if ($reimbursement->image_path) {
-            Storage::disk('public')->delete($reimbursement->image_path);
+            Storage::delete($reimbursement->image_path);
         }
 
         $reimbursement->delete();
