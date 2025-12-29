@@ -53,14 +53,25 @@ if (isset($_ENV['VERCEL_ENV']) || isset($_SERVER['VERCEL_ENV'])) {
         }
         echo "\n";
         
-        // Scenario 3: System CA
+        // Scenario 3: System CA (Native PHP Check)
         echo "3. Attempting connection with System CA...\n";
-        $ca = collect([
+        
+        $possiblePaths = [
+            __DIR__ . '/../storage/tidb-ca.pem', // Check if our custom one exists
             '/etc/pki/tls/certs/ca-bundle.crt',
             '/etc/ssl/certs/ca-certificates.crt',
             '/etc/ssl/ca-bundle.pem',
             '/usr/local/share/ca-certificates/cacert.pem',
-        ])->first(fn($path) => file_exists($path));
+            '/usr/local/etc/openssl/cert.pem',
+        ];
+
+        $ca = null;
+        foreach ($possiblePaths as $path) {
+            if (file_exists($path)) {
+                $ca = $path;
+                break;
+            }
+        }
         
         echo "Detected CA Path: " . ($ca ?? 'NONE') . "\n";
         
@@ -68,12 +79,24 @@ if (isset($_ENV['VERCEL_ENV']) || isset($_SERVER['VERCEL_ENV'])) {
             try {
                 $options = [
                     PDO::MYSQL_ATTR_SSL_CA => $ca,
-                    PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => true,
+                    PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => true, // Try strict first with correct CA
                 ];
                 $pdo = new PDO($dsn, $user, $pass, $options);
-                echo "SUCCESS!\n";
+                echo "SUCCESS! (Strict)\n";
             } catch (PDOException $e) {
-                echo "FAILED: " . $e->getMessage() . "\n";
+                echo "FAILED (Strict): " . $e->getMessage() . "\n";
+                // Try relaxed
+                try {
+                     echo "   Retrying with VERIFY_SERVER_CERT=false...\n";
+                     $options = [
+                        PDO::MYSQL_ATTR_SSL_CA => $ca,
+                        PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
+                    ];
+                    $pdo = new PDO($dsn, $user, $pass, $options);
+                    echo "   SUCCESS! (Relaxed)\n";
+                } catch (PDOException $e2) {
+                    echo "   FAILED (Relaxed): " . $e2->getMessage() . "\n";
+                }
             }
         } else {
              echo "SKIPPED (No CA found)\n";
