@@ -62,19 +62,26 @@ if (isset($_ENV['VERCEL_ENV']) || isset($_SERVER['VERCEL_ENV'])) {
             
             $app = require __DIR__ . '/../bootstrap/app.php';
             $app->useStoragePath($storagePath);
-            $app->boot();
+            
+            // Use kernel to properly bootstrap
+            $kernel = $app->make(\Illuminate\Contracts\Http\Kernel::class);
+            $kernel->bootstrap();
             
             $router = $app->make('router');
-            $routes = collect($router->getRoutes())->map(fn($r) => [
-                'uri' => $r->uri(),
-                'methods' => $r->methods(),
-            ])->take(50)->values()->toArray();
+            $routes = [];
+            foreach ($router->getRoutes() as $route) {
+                $routes[] = [
+                    'uri' => $route->uri(),
+                    'methods' => $route->methods(),
+                ];
+                if (count($routes) >= 50) break;
+            }
             
             echo json_encode([
                 'success' => true, 
-                'message' => 'Laravel booted successfully',
-                'route_count' => count($routes),
-                'routes' => $routes,
+                'message' => 'Laravel booted successfully (v2)',
+                'route_count' => count($router->getRoutes()),
+                'sample_routes' => $routes,
             ]);
         } catch (\Throwable $e) {
             echo json_encode([
