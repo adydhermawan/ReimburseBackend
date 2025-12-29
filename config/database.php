@@ -40,20 +40,7 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => (function() {
-                    $paths = [
-                        '/etc/pki/tls/certs/ca-bundle.crt',
-                        '/etc/ssl/certs/ca-certificates.crt',
-                        '/etc/ssl/ca-bundle.pem',
-                        '/usr/local/share/ca-certificates/cacert.pem',
-                        '/usr/local/etc/openssl/cert.pem',
-                        base_path('storage/tidb-ca.pem'),
-                    ];
-                    foreach ($paths as $path) {
-                        if (file_exists($path)) return $path;
-                    }
-                    return null;
-                })(),
+                PDO::MYSQL_ATTR_SSL_CA => base_path('storage/tidb-ca.pem'),
                 PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
             ]) : [],
         ],
