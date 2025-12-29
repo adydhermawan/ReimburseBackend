@@ -18,11 +18,29 @@ if (isset($_ENV['VERCEL_ENV']) || isset($_SERVER['VERCEL_ENV'])) {
         header('Content-Type: application/json');
         echo json_encode([
             'success' => true, 
-            'message' => 'Vercel deployment is current (v4)',
+            'message' => 'Vercel deployment is current (v5)',
             'timestamp' => date('Y-m-d H:i:s'),
             'php_version' => PHP_VERSION,
             'request_uri' => $_SERVER['REQUEST_URI'],
-            'commit' => 'v4-route-debug'
+            'request_method' => $_SERVER['REQUEST_METHOD'],
+            'commit' => 'v5-request-debug'
+        ]);
+        exit;
+    }
+    
+    // Debug how Laravel sees the request
+    if ($_SERVER['REQUEST_URI'] === '/api/debug-request' || $_SERVER['REQUEST_URI'] === '/api/debug-request/') {
+        require __DIR__ . '/../vendor/autoload.php';
+        $request = \Illuminate\Http\Request::capture();
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'server_request_uri' => $_SERVER['REQUEST_URI'],
+            'server_path_info' => $_SERVER['PATH_INFO'] ?? 'NOT SET',
+            'laravel_path' => $request->path(),
+            'laravel_url' => $request->url(),
+            'laravel_fullUrl' => $request->fullUrl(),
+            'laravel_method' => $request->method(),
         ]);
         exit;
     }
