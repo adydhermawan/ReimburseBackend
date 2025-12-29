@@ -84,7 +84,8 @@ class ReimbursementController extends Controller
             );
 
             // Store image
-            $imagePath = $request->file('image')->store('receipts');
+            $directory = config('filesystems.default') === 'cloudinary' ? 'home/recashly' : 'receipts';
+            $imagePath = $request->file('image')->store($directory);
 
             // Create reimbursement
             $reimbursement = Reimbursement::create([
@@ -179,7 +180,8 @@ class ReimbursementController extends Controller
                 if ($reimbursement->image_path) {
                     Storage::delete($reimbursement->image_path);
                 }
-                $reimbursement->image_path = $request->file('image')->store('receipts');
+                $directory = config('filesystems.default') === 'cloudinary' ? 'home/recashly' : 'receipts';
+                $reimbursement->image_path = $request->file('image')->store($directory);
             }
 
             // Update other fields

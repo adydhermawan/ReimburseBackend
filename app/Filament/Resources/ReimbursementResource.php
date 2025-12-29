@@ -100,7 +100,7 @@ class ReimbursementResource extends Resource
                         Forms\Components\FileUpload::make('image_path')
                             ->label('Receipt Image')
                             ->image()
-                            ->directory('receipts')
+                            ->directory(config('filesystems.default') === 'cloudinary' ? 'home/recashly' : 'receipts')
                             ->visibility('public')
                             ->imageEditor()
                             ->maxSize(5120)
