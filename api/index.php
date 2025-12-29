@@ -44,6 +44,8 @@ if (isset($_ENV['VERCEL_ENV']) || isset($_SERVER['VERCEL_ENV'])) {
             'success' => true,
             'server_request_uri' => $_SERVER['REQUEST_URI'],
             'server_path_info' => $_SERVER['PATH_INFO'] ?? 'NOT SET',
+            'server_script_name' => $_SERVER['SCRIPT_NAME'] ?? 'NOT SET',
+            'server_script_filename' => $_SERVER['SCRIPT_FILENAME'] ?? 'NOT SET',
             'laravel_path' => $request->path(),
             'laravel_url' => $request->url(),
             'laravel_fullUrl' => $request->fullUrl(),
