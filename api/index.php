@@ -13,9 +13,11 @@ use Illuminate\Http\Request;
 |
 */
 if (isset($_ENV['VERCEL_ENV']) || isset($_SERVER['VERCEL_ENV'])) {
-    // CRITICAL FIX: Vercel sets PATH_INFO to the path AFTER /api (e.g., /auth/login)
-    // but Laravel expects the full path including /api prefix.
-    // Set PATH_INFO to REQUEST_URI (minus query string) so Laravel sees the full path.
+    // CRITICAL FIX for Vercel routing:
+    // 1. Vercel sets SCRIPT_NAME to /api/index.php, causing Laravel to strip /api from paths
+    // 2. Vercel sets PATH_INFO to path AFTER /api (e.g., /auth/login instead of /api/auth/login)
+    // Fix: Override SCRIPT_NAME to /index.php and PATH_INFO to full REQUEST_URI
+    $_SERVER['SCRIPT_NAME'] = '/index.php';
     $requestUri = $_SERVER['REQUEST_URI'];
     $queryPos = strpos($requestUri, '?');
     $_SERVER['PATH_INFO'] = $queryPos !== false ? substr($requestUri, 0, $queryPos) : $requestUri;
@@ -25,12 +27,12 @@ if (isset($_ENV['VERCEL_ENV']) || isset($_SERVER['VERCEL_ENV'])) {
         header('Content-Type: application/json');
         echo json_encode([
             'success' => true, 
-            'message' => 'Vercel deployment is current (v8)',
+            'message' => 'Vercel deployment is current (v9)',
             'timestamp' => date('Y-m-d H:i:s'),
             'php_version' => PHP_VERSION,
             'request_uri' => $_SERVER['REQUEST_URI'],
             'request_method' => $_SERVER['REQUEST_METHOD'],
-            'commit' => 'v8-set-pathinfo'
+            'commit' => 'v9-script-name-fix'
         ]);
         exit;
     }
