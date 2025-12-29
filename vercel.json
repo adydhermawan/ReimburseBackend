@@ -36,6 +36,18 @@
             "dest": "/public/robots.txt"
         },
         {
+            "src": "/logo-white.png",
+            "dest": "/public/logo-white.png"
+        },
+        {
+            "src": "/logo.png",
+            "dest": "/public/logo.png"
+        },
+        {
+            "src": "/storage/(.*)",
+            "dest": "/public/storage/$1"
+        },
+        {
             "src": "/(.*)",
             "dest": "/api/index.php"
         }
