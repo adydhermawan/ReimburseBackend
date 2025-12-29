@@ -26,6 +26,37 @@ Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
+Route::get('/debug-cloudinary', function () {
+    try {
+        $disk = config('filesystems.default');
+        $config = config("filesystems.disks.{$disk}");
+        
+        // Attempt upload
+        $filename = 'debug_' . time() . '.txt';
+        $content = 'Debug content ' . date('Y-m-d H:i:s');
+        $path = Illuminate\Support\Facades\Storage::disk($disk)->put($filename, $content);
+        $url = Illuminate\Support\Facades\Storage::disk($disk)->url($filename);
+        
+        return response()->json([
+            'success' => true,
+            'disk' => $disk,
+            'config' => $config,
+            'url' => $url,
+            'env_check' => [
+                'FILESYSTEM_DISK' => env('FILESYSTEM_DISK'),
+                'CLOUDINARY_URL_SET' => !empty(env('CLOUDINARY_URL')),
+            ]
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+            'config_dump' => config('filesystems'),
+        ], 500);
+    }
+});
+
 Route::get('/test-connection', function () {
     return response()->json(['success' => true, 'message' => 'API Connection Established', 'ip' => request()->ip()]);
 });
