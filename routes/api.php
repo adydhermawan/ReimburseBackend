@@ -58,7 +58,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reports', [ReportController::class, 'index']);
     Route::get('/reports/{report}', [ReportController::class, 'show']);
     Route::get('/reports/{report}/download', [ReportController::class, 'download']);
+    Route::post('/reports/{report}/generate', [ReportController::class, 'generate']);
+    Route::post('/reports/{report}/paid', [ReportController::class, 'markAsPaid']);
 
     // App Version Management (admin only)
     Route::post('/app-version', [AppVersionController::class, 'store']);
+});
+
+// Internal routes for Next.js Admin Panel
+Route::prefix('internal')->group(function () {
+    Route::middleware([\App\Http\Middleware\VerifyInternalSecret::class])->group(function () {
+        Route::post('/reports/{report}/generate', [ReportController::class, 'generate']);
+    });
 });

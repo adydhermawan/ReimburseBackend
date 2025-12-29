@@ -30,8 +30,8 @@ class ReportController extends Controller
      */
     public function show(Request $request, Report $report): JsonResponse
     {
-        // Ensure user owns this report
-        if ($report->user_id !== $request->user()->id) {
+        // Allow if owner OR admin
+        if ($report->user_id !== $request->user()->id && !$request->user()->is_admin) {
             return response()->json([
                 'success' => false,
                 'message' => 'Tidak diizinkan',
@@ -48,12 +48,70 @@ class ReportController extends Controller
     }
 
     /**
+     * Generate PDF for a report.
+     */
+    public function generate(Request $request, Report $report, \App\Services\PdfReportService $service): JsonResponse
+    {
+        // Allow if owner OR admin
+        if ($report->user_id !== $request->user()->id && !$request->user()->is_admin) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        try {
+            $path = $service->generate($report);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'PDF Generated successfully',
+                'data' => [
+                    'pdf_path' => $path,
+                    'pdf_url' => url('storage/' . $path)
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate PDF: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Mark report as paid.
+     */
+    public function markAsPaid(Request $request, Report $report): JsonResponse
+    {
+        // Only Admin can mark as paid
+        if (!$request->user()->is_admin) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized - Admin only'], 403);
+        }
+
+        $validated = $request->validate([
+            'payment_date' => 'required|date',
+        ]);
+
+        $report->update([
+            'status' => 'paid',
+            'payment_date' => $validated['payment_date'],
+        ]);
+
+        // Update all reimbursements
+        $report->reimbursements()->update(['status' => 'paid']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Report marked as paid',
+            'data' => $report
+        ]);
+    }
+
+    /**
      * Download report PDF.
      */
     public function download(Request $request, Report $report)
     {
-        // Ensure user owns this report
-        if ($report->user_id !== $request->user()->id) {
+        // Allow if owner OR admin
+        if ($report->user_id !== $request->user()->id && !$request->user()->is_admin) {
             return response()->json([
                 'success' => false,
                 'message' => 'Tidak diizinkan',

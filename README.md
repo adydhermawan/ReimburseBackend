@@ -85,6 +85,26 @@ Full documentation should be generated via Postman or Scribe, but here are the k
 - **Reimbursements**: `/api/reimbursements` (GET, POST), `/api/reimbursements/{id}` (GET, PUT)
 - **Reports**: `/api/reports`, `/api/reports/{id}/download`
 
+### ☁️ Zero-Cost Deployment (Vercel, TiDB, Cloudinary)
+
+This project is configured for a **Zero-Cost** serverless deployment stack:
+- **Vercel**: Hosts the Laravel API (Serverless Functions).
+- **TiDB Cloud**: Serverless MySQL compatible database.
+- **Cloudinary**: Cloud storage for files/images (since Vercel filesystem is ephemeral).
+
+#### Setup Steps:
+1.  **Vercel**: Import the project. Set `Framework Preset` to `Other`.
+2.  **Environment Variables**: Add these in Vercel Dashboard:
+    -   `APP_KEY`: (Generate via `php artisan key:generate --show`)
+    -   `APP_URL` & `ASSET_URL`: `https://your-project.vercel.app`
+    -   `DB_CONNECTION`: `mysql`
+    -   `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`: (TiDB Credentials)
+    -   `DB_SSL_MODE`: `verify_identity`
+    -   `CLOUDINARY_URL`: (From Cloudinary Dashboard)
+    -   `FILESYSTEM_DISK`: `cloudinary`
+    -   `SESSION_DRIVER`: `database`
+3.  **Migrations**: Run `php artisan migrate` from your **local machine** (connected to the remote TiDB database) to set up the tables.
+
 ### 🔧 Useful Commands
 
 ```bash
@@ -181,6 +201,26 @@ Dokumentasi lengkap dapat dibuat menggunakan Postman, namun berikut adalah endpo
 - **Autentikasi**: `/api/auth/register`, `/api/auth/login`, `/api/auth/logout`, `/api/auth/me`
 - **Reimbursement**: `/api/reimbursements` (GET, POST), `/api/reimbursements/{id}` (GET, PUT)
 - **Laporan**: `/api/reports`, `/api/reports/{id}/download`
+
+### ☁️ Deployment Gratis (Vercel, TiDB, Cloudinary)
+
+Proyek ini telah dikonfigurasi untuk deployment **Zero-Cost** (Gratis) menggunakan stack serverless:
+- **Vercel**: Hosting API Laravel (Serverless Functions).
+- **TiDB Cloud**: Database MySQL serverless.
+- **Cloudinary**: Penyimpanan file/gambar cloud (karena penyimpanan Vercel bersifat sementara).
+
+#### Langkah Setup:
+1.  **Vercel**: Import proyek. Set `Framework Preset` ke `Other`.
+2.  **Environment Variables**: Tambahkan ini di Dashboard Vercel:
+    -   `APP_KEY`: (Generate via `php artisan key:generate --show`)
+    -   `APP_URL` & `ASSET_URL`: `https://your-project.vercel.app`
+    -   `DB_CONNECTION`: `mysql`
+    -   `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`: (Kredensial TiDB)
+    -   `DB_SSL_MODE`: `verify_identity`
+    -   `CLOUDINARY_URL`: (Dari Dashboard Cloudinary)
+    -   `FILESYSTEM_DISK`: `cloudinary`
+    -   `SESSION_DRIVER`: `database`
+3.  **Migrasi**: Jalankan `php artisan migrate` dari **komputer lokal** Anda (yang terhubung ke database TiDB remote) untuk membuat tabel.
 
 ### 🔧 Perintah Berguna
 
