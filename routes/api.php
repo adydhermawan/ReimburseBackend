@@ -30,6 +30,18 @@ Route::get('/test-connection', function () {
     return response()->json(['success' => true, 'message' => 'API Connection Established', 'ip' => request()->ip()]);
 });
 
+// DEBUG: List all registered routes
+Route::get('/debug-routes', function () {
+    $routes = collect(\Illuminate\Support\Facades\Route::getRoutes())->map(function ($route) {
+        return [
+            'uri' => $route->uri(),
+            'methods' => $route->methods(),
+            'name' => $route->getName(),
+        ];
+    });
+    return response()->json(['routes' => $routes, 'count' => $routes->count()]);
+});
+
 // Public categories (can be cached)
 Route::get('/categories', [CategoryController::class, 'index']);
 
