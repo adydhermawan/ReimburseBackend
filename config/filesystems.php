@@ -61,6 +61,11 @@ return [
 
         'cloudinary' => [
             'driver' => 'cloudinary',
+            'cloud_name' => env('CLOUDINARY_CLOUD_NAME') ?? (parse_url(env('CLOUDINARY_URL'), PHP_URL_HOST) ?? null),
+            'api_key' => env('CLOUDINARY_API_KEY') ?? (parse_url(env('CLOUDINARY_URL'), PHP_URL_USER) ?? null),
+            'api_secret' => env('CLOUDINARY_API_SECRET') ?? (parse_url(env('CLOUDINARY_URL'), PHP_URL_PASS) ?? null),
+            'url' => env('CLOUDINARY_URL'),
+            'secure' => true,
         ],
 
     ],
