@@ -18,12 +18,72 @@ if (isset($_ENV['VERCEL_ENV']) || isset($_SERVER['VERCEL_ENV'])) {
         header('Content-Type: application/json');
         echo json_encode([
             'success' => true, 
-            'message' => 'Vercel deployment is current (v3)',
+            'message' => 'Vercel deployment is current (v4)',
             'timestamp' => date('Y-m-d H:i:s'),
             'php_version' => PHP_VERSION,
             'request_uri' => $_SERVER['REQUEST_URI'],
-            'commit' => 'after-debug-routes-fix'
+            'commit' => 'v4-route-debug'
         ]);
+        exit;
+    }
+    
+    // Deep debug - bootstrap Laravel and check routes
+    if ($_SERVER['REQUEST_URI'] === '/api/debug-laravel' || $_SERVER['REQUEST_URI'] === '/api/debug-laravel/') {
+        header('Content-Type: application/json');
+        try {
+            require __DIR__ . '/../vendor/autoload.php';
+            
+            $storagePath = '/tmp/storage';
+            $bootstrapCachePath = '/tmp/bootstrap/cache';
+            
+            if (!is_dir($storagePath)) {
+                mkdir($storagePath, 0777, true);
+                mkdir($storagePath . '/app', 0777, true);
+                mkdir($storagePath . '/framework/cache', 0777, true);
+                mkdir($storagePath . '/framework/views', 0777, true);
+                mkdir($storagePath . '/framework/sessions', 0777, true);
+                mkdir($storagePath . '/logs', 0777, true);
+            }
+            if (!is_dir($bootstrapCachePath)) {
+                mkdir($bootstrapCachePath, 0777, true);
+            }
+            
+            $_ENV['APP_SERVICES_CACHE'] = $bootstrapCachePath . '/services.php';
+            $_ENV['APP_PACKAGES_CACHE'] = $bootstrapCachePath . '/packages.php';
+            $_ENV['APP_CONFIG_CACHE'] = $bootstrapCachePath . '/config.php';
+            $_ENV['APP_ROUTES_CACHE'] = $bootstrapCachePath . '/routes.php';
+            $_ENV['APP_EVENTS_CACHE'] = $bootstrapCachePath . '/events.php';
+            
+            // Delete route cache
+            $routesCacheFile = $bootstrapCachePath . '/routes.php';
+            if (file_exists($routesCacheFile)) {
+                @unlink($routesCacheFile);
+            }
+            
+            $app = require __DIR__ . '/../bootstrap/app.php';
+            $app->useStoragePath($storagePath);
+            $app->boot();
+            
+            $router = $app->make('router');
+            $routes = collect($router->getRoutes())->map(fn($r) => [
+                'uri' => $r->uri(),
+                'methods' => $r->methods(),
+            ])->take(50)->values()->toArray();
+            
+            echo json_encode([
+                'success' => true, 
+                'message' => 'Laravel booted successfully',
+                'route_count' => count($routes),
+                'routes' => $routes,
+            ]);
+        } catch (\Throwable $e) {
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+        }
         exit;
     }
 
