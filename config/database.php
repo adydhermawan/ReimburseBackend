@@ -42,7 +42,7 @@ return [
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => __DIR__ . '/../storage/tidb-ca.pem',
                 PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
-            ]) : [],
+            ], fn($v) => $v !== null) : [],
         ],
 
     ],
