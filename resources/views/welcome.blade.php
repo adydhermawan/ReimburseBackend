@@ -229,7 +229,7 @@
                 Access Admin Panel
             </a>
             <!-- Optional: Link to docs if available, or just keeping it clean -->
-            <a href="/verify" class="btn btn-secondary">
+            <a href="#" onclick="verifyConnection(event)" class="btn btn-secondary">
                 Verify Connection
             </a>
         </div>
@@ -238,5 +238,76 @@
     <div class="footer">
         &copy; {{ date('Y') }} Recashly API System. v1.0.0
     </div>
+    <!-- Connection Details Modal/Container -->
+    <div id="connection-details" style="display: none; margin-top: 1rem; text-align: left; background: rgba(30, 41, 59, 0.8); padding: 1rem; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">
+            <span style="color: var(--text-secondary);">API Endpoint</span>
+            <span id="status-api" style="color: var(--text-primary);">...</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">
+            <span style="color: var(--text-secondary);">Database (TiDB)</span>
+            <span id="status-db" style="color: var(--text-primary);">...</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-secondary);">Cloudinary Assets</span>
+            <span id="status-cloudinary" style="color: var(--text-primary);">...</span>
+        </div>
+    </div>
+
+    <script>
+        function verifyConnection(event) {
+            event.preventDefault();
+            const btn = event.currentTarget;
+            const originalText = btn.innerHTML;
+            const detailsDiv = document.getElementById('connection-details');
+            const mainStatusText = document.querySelector('.status-text');
+            const statusDot = document.querySelector('.status-dot');
+            
+            // Reset UI
+            btn.innerHTML = 'Verifying...';
+            btn.style.opacity = '0.7';
+            btn.style.pointerEvents = 'none';
+            detailsDiv.style.display = 'none';
+            
+            // Insert details div after status card if not already moved
+            const statusCard = document.querySelector('.status-card');
+            statusCard.parentNode.insertBefore(detailsDiv, statusCard.nextSibling);
+
+            fetch('/api/health-check')
+                .then(response => response.json())
+                .then(data => {
+                    // Update details
+                    document.getElementById('status-api').innerHTML = data.api ? '<span style="color: #10B981;">✓ Connected</span>' : '<span style="color: #EF4444;">✗ Failed</span>';
+                    document.getElementById('status-db').innerHTML = data.database ? '<span style="color: #10B981;">✓ Connected</span>' : '<span style="color: #EF4444;">✗ Failed</span>';
+                    document.getElementById('status-cloudinary').innerHTML = data.cloudinary ? '<span style="color: #10B981;">✓ Configured</span>' : '<span style="color: #EF4444;">✗ Not Configured</span>';
+                    
+                    detailsDiv.style.display = 'block';
+                    
+                    // Update main status if any issues
+                    if (!data.api || !data.database || !data.cloudinary) {
+                         mainStatusText.textContent = data.message || "System Issues Detected";
+                         statusDot.style.backgroundColor = '#EF4444';
+                         statusDot.style.boxShadow = '0 0 10px rgba(239, 68, 68, 0.5)';
+                         // Update ripple color via css variable manipulation or class if needed, checking style directly is easiest for inline
+                         // For now just dot color is reliable
+                    } else {
+                         mainStatusText.textContent = "All Systems Operational";
+                         statusDot.style.backgroundColor = '#10B981';
+                         statusDot.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.5)';
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    mainStatusText.textContent = "Connection Failed";
+                    statusDot.style.backgroundColor = '#EF4444';
+                    alert('Failed to contact server');
+                })
+                .finally(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.opacity = '1';
+                    btn.style.pointerEvents = 'auto';
+                });
+        }
+    </script>
 </body>
 </html>

@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\ReimbursementController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\AppVersionController;
+use App\Http\Controllers\HealthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -60,6 +61,8 @@ Route::get('/debug-cloudinary', function () {
 Route::get('/test-connection', function () {
     return response()->json(['success' => true, 'message' => 'API Connection Established', 'ip' => request()->ip()]);
 });
+
+Route::get('/health-check', [HealthController::class, 'check']);
 
 
 // Public categories (can be cached)
