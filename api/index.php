@@ -13,46 +13,6 @@ use Illuminate\Http\Request;
 |
 */
 if (isset($_ENV['VERCEL_ENV']) || isset($_SERVER['VERCEL_ENV'])) {
-    
-    // --- TEMPORARY: RESET ADMIN PASSWORD ---
-    if (strpos($_SERVER['REQUEST_URI'], 'reset-admin') !== false) {
-        try {
-            require __DIR__ . '/../vendor/autoload.php';
-            $storagePath = '/tmp/storage';
-            $bootstrapCachePath = '/tmp/bootstrap/cache';
-            if (!is_dir($storagePath)) { mkdir($storagePath, 0777, true); mkdir($storagePath . '/framework/views', 0777, true); }
-            if (!is_dir($bootstrapCachePath)) { mkdir($bootstrapCachePath, 0777, true); }
-            $_ENV['APP_SERVICES_CACHE'] = $bootstrapCachePath . '/services.php';
-            $_ENV['APP_PACKAGES_CACHE'] = $bootstrapCachePath . '/packages.php';
-            $_ENV['APP_CONFIG_CACHE'] = $bootstrapCachePath . '/config.php';
-            $_ENV['APP_ROUTES_CACHE'] = $bootstrapCachePath . '/routes.php';
-            $_ENV['APP_EVENTS_CACHE'] = $bootstrapCachePath . '/events.php';
-            $app = require __DIR__ . '/../bootstrap/app.php';
-            $app->useStoragePath($storagePath);
-            $app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
-            
-            // Reset first admin user password
-            $admin = \App\Models\User::where('is_admin', true)->first();
-            if ($admin) {
-                $admin->password = bcrypt('recashly2024');
-                $admin->save();
-                echo "Password reset for: " . $admin->email . "\nNew Password: recashly2024\n";
-            } else {
-                // Create new admin if none exists
-                $admin = \App\Models\User::create([
-                    'name' => 'Admin',
-                    'email' => 'admin@recashly.com',
-                    'password' => bcrypt('recashly2024'),
-                    'is_admin' => true,
-                ]);
-                echo "Admin created: admin@recashly.com\nPassword: recashly2024\n";
-            }
-        } catch (\Throwable $e) {
-            echo "Error: " . $e->getMessage() . "\n";
-        }
-        exit;
-    }
-    
     try {
         // Register the Composer autoloader...
         require __DIR__ . '/../vendor/autoload.php';
