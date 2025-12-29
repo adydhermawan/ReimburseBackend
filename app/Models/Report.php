@@ -83,7 +83,11 @@ class Report extends Model
             return null;
         }
 
-        return \Illuminate\Support\Facades\Storage::url($this->pdf_path);
+        try {
+            return \Illuminate\Support\Facades\Storage::url($this->pdf_path);
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 
     /**
