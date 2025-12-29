@@ -38,10 +38,15 @@ if (isset($_ENV['VERCEL_ENV']) || isset($_SERVER['VERCEL_ENV'])) {
         $_ENV['APP_SERVICES_CACHE'] = $bootstrapCachePath . '/services.php';
         $_ENV['APP_PACKAGES_CACHE'] = $bootstrapCachePath . '/packages.php';
         $_ENV['APP_CONFIG_CACHE'] = $bootstrapCachePath . '/config.php';
-        // IMPORTANT: Disable route caching to prevent stale routes causing 404 errors
-        // Route caching on serverless can cause issues as routes may not refresh properly
-        $_ENV['APP_ROUTES_CACHE'] = '';
+        $_ENV['APP_ROUTES_CACHE'] = $bootstrapCachePath . '/routes.php';
         $_ENV['APP_EVENTS_CACHE'] = $bootstrapCachePath . '/events.php';
+        
+        // IMPORTANT: Delete route cache to prevent stale routes on serverless
+        // This ensures routes are always fresh loaded from routes/*.php files
+        $routesCacheFile = $bootstrapCachePath . '/routes.php';
+        if (file_exists($routesCacheFile)) {
+            @unlink($routesCacheFile);
+        }
         
         // Override standard Laravel storage path
         $app = require __DIR__ . '/../bootstrap/app.php';
