@@ -63,6 +63,10 @@ if (isset($_ENV['VERCEL_ENV']) || isset($_SERVER['VERCEL_ENV'])) {
             $app = require __DIR__ . '/../bootstrap/app.php';
             $app->useStoragePath($storagePath);
             
+            // Capture request before bootstrap
+            $request = \Illuminate\Http\Request::capture();
+            $app->instance('request', $request);
+            
             // Use kernel to properly bootstrap
             $kernel = $app->make(\Illuminate\Contracts\Http\Kernel::class);
             $kernel->bootstrap();
