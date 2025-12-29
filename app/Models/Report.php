@@ -83,7 +83,7 @@ class Report extends Model
             return null;
         }
 
-        return asset('storage/' . $this->pdf_path);
+        return \Illuminate\Support\Facades\Storage::url($this->pdf_path);
     }
 
     /**
