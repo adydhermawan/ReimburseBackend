@@ -13,6 +13,20 @@ use Illuminate\Http\Request;
 |
 */
 if (isset($_ENV['VERCEL_ENV']) || isset($_SERVER['VERCEL_ENV'])) {
+    // Quick debug endpoint - bypasses Laravel entirely to verify deployment is current
+    if ($_SERVER['REQUEST_URI'] === '/api/vercel-test' || $_SERVER['REQUEST_URI'] === '/api/vercel-test/') {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true, 
+            'message' => 'Vercel deployment is current (v3)',
+            'timestamp' => date('Y-m-d H:i:s'),
+            'php_version' => PHP_VERSION,
+            'request_uri' => $_SERVER['REQUEST_URI'],
+            'commit' => 'after-debug-routes-fix'
+        ]);
+        exit;
+    }
+
     try {
         // Register the Composer autoloader...
         require __DIR__ . '/../vendor/autoload.php';
