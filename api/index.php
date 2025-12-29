@@ -13,17 +13,23 @@ use Illuminate\Http\Request;
 |
 */
 if (isset($_ENV['VERCEL_ENV']) || isset($_SERVER['VERCEL_ENV'])) {
+    // CRITICAL FIX: Vercel sets PATH_INFO to the path AFTER /api (e.g., /auth/login)
+    // but Laravel expects the full path including /api prefix.
+    // By unsetting PATH_INFO, Laravel will use REQUEST_URI which has the correct full path.
+    // This MUST be done at the very beginning before any code that uses Request::capture()
+    unset($_SERVER['PATH_INFO']);
+    
     // Quick debug endpoint - bypasses Laravel entirely to verify deployment is current
     if ($_SERVER['REQUEST_URI'] === '/api/vercel-test' || $_SERVER['REQUEST_URI'] === '/api/vercel-test/') {
         header('Content-Type: application/json');
         echo json_encode([
             'success' => true, 
-            'message' => 'Vercel deployment is current (v6)',
+            'message' => 'Vercel deployment is current (v7)',
             'timestamp' => date('Y-m-d H:i:s'),
             'php_version' => PHP_VERSION,
             'request_uri' => $_SERVER['REQUEST_URI'],
             'request_method' => $_SERVER['REQUEST_METHOD'],
-            'commit' => 'v6-pathinfo-fix'
+            'commit' => 'v7-pathinfo-at-start'
         ]);
         exit;
     }
@@ -117,11 +123,6 @@ if (isset($_ENV['VERCEL_ENV']) || isset($_SERVER['VERCEL_ENV'])) {
     }
 
     try {
-        // IMPORTANT FIX: Vercel sets PATH_INFO to the path AFTER /api (e.g., /auth/login)
-        // but Laravel expects the full path including /api prefix.
-        // By unsetting PATH_INFO, Laravel will use REQUEST_URI which has the correct full path.
-        unset($_SERVER['PATH_INFO']);
-        
         // Register the Composer autoloader...
         require __DIR__ . '/../vendor/autoload.php';
 
