@@ -1,0 +1,63 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Report;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Storage;
+
+class PdfReportService
+{
+    /**
+     * Generate PDF for a report
+     */
+    public function generate(Report $report): string
+    {
+        $report->load(['user', 'reimbursements.client', 'reimbursements.category']);
+
+        // Generate PDF
+        $pdf = Pdf::loadView('pdf.report', [
+            'report' => $report,
+            'reimbursements' => $report->reimbursements,
+        ]);
+
+        // Configure PDF settings
+        $pdf->setPaper('a4', 'portrait');
+        $pdf->setOption('isRemoteEnabled', true);
+        $pdf->setOption('isHtml5ParserEnabled', true);
+
+        // Generate filename
+        $filename = sprintf(
+            'reports/%s_%s_%s.pdf',
+            $report->user->name,
+            $report->period_start->format('Ym'),
+            $report->id
+        );
+
+        // Clean filename (remove spaces and special chars)
+        $filename = preg_replace('/[^a-zA-Z0-9_\/.-]/', '_', $filename);
+
+        // Save to storage
+        Storage::disk('public')->put($filename, $pdf->output());
+
+        // Update report record
+        $report->update([
+            'pdf_path' => $filename,
+            'status' => 'generated',
+        ]);
+
+        return $filename;
+    }
+
+    /**
+     * Get the PDF download path
+     */
+    public function getDownloadPath(Report $report): ?string
+    {
+        if (!$report->pdf_path) {
+            return null;
+        }
+
+        return Storage::disk('public')->path($report->pdf_path);
+    }
+}

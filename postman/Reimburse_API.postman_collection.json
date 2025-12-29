@@ -1,0 +1,1157 @@
+{
+    "info": {
+        "_postman_id": "reimburse-api-collection",
+        "name": "Reimburse API",
+        "description": "API documentation for Reimburse Backend Application.\n\n## Base URL\n- **Local**: `http://reimburse.localhost:8888/api`\n\n## Authentication\nThis API uses Laravel Sanctum for authentication. After login/register, you'll receive a Bearer token that must be included in subsequent requests.\n\n### Headers\n```\nAuthorization: Bearer {token}\nAccept: application/json\nContent-Type: application/json\n```",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://reimburse.localhost:8888/api",
+            "type": "string"
+        },
+        {
+            "key": "token",
+            "value": "",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "Auth",
+            "description": "Authentication endpoints for user registration, login, logout, and profile.",
+            "item": [
+                {
+                    "name": "Register",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/register",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "register"
+                            ]
+                        },
+                        "description": "Register a new user account.\n\n### Request Body\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| name | string | Yes | User's full name (max 255 chars) |\n| email | string | Yes | Unique email address |\n| password | string | Yes | Password (min 8 chars) |\n| password_confirmation | string | Yes | Must match password |\n\n### Response (201 Created)\n```json\n{\n    \"success\": true,\n    \"message\": \"Registrasi berhasil\",\n    \"data\": {\n        \"user\": {\n            \"id\": 1,\n            \"name\": \"John Doe\",\n            \"email\": \"john@example.com\"\n        },\n        \"token\": \"1|abc123...\"\n    }\n}\n```"
+                    },
+                    "response": [
+                        {
+                            "name": "Success - 201 Created",
+                            "originalRequest": {
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/auth/register",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "auth",
+                                        "register"
+                                    ]
+                                }
+                            },
+                            "status": "Created",
+                            "code": 201,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "body": "{\n    \"success\": true,\n    \"message\": \"Registrasi berhasil\",\n    \"data\": {\n        \"user\": {\n            \"id\": 1,\n            \"name\": \"John Doe\",\n            \"email\": \"john@example.com\"\n        },\n        \"token\": \"1|abc123xyz\"\n    }\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Login",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "if (jsonData.success && jsonData.data.token) {",
+                                    "    pm.collectionVariables.set(\"token\", jsonData.data.token);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/login",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "login"
+                            ]
+                        },
+                        "description": "Authenticate user and get access token.\n\n### Request Body\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| email | string | Yes | Registered email address |\n| password | string | Yes | User's password |\n\n### Response (200 OK)\n```json\n{\n    \"success\": true,\n    \"message\": \"Login berhasil\",\n    \"data\": {\n        \"user\": {\n            \"id\": 1,\n            \"name\": \"John Doe\",\n            \"email\": \"john@example.com\"\n        },\n        \"token\": \"1|abc123...\"\n    }\n}\n```\n\n### Error (422 Validation Exception)\n```json\n{\n    \"message\": \"The given data was invalid.\",\n    \"errors\": {\n        \"email\": [\"Email atau password salah.\"]\n    }\n}\n```"
+                    },
+                    "response": [
+                        {
+                            "name": "Success - 200 OK",
+                            "originalRequest": {
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/auth/login",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "auth",
+                                        "login"
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "body": "{\n    \"success\": true,\n    \"message\": \"Login berhasil\",\n    \"data\": {\n        \"user\": {\n            \"id\": 1,\n            \"name\": \"John Doe\",\n            \"email\": \"john@example.com\"\n        },\n        \"token\": \"1|abc123xyz\"\n    }\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Logout",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/logout",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "logout"
+                            ]
+                        },
+                        "description": "Logout user and revoke current access token.\n\n### Authentication\n🔒 Requires Bearer Token\n\n### Response (200 OK)\n```json\n{\n    \"success\": true,\n    \"message\": \"Logout berhasil\"\n}\n```"
+                    },
+                    "response": [
+                        {
+                            "name": "Success - 200 OK",
+                            "originalRequest": {
+                                "method": "POST",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{baseUrl}}/auth/logout",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "auth",
+                                        "logout"
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "body": "{\n    \"success\": true,\n    \"message\": \"Logout berhasil\"\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Current User",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/me",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "me"
+                            ]
+                        },
+                        "description": "Get current authenticated user's profile.\n\n### Authentication\n🔒 Requires Bearer Token\n\n### Response (200 OK)\n```json\n{\n    \"success\": true,\n    \"data\": {\n        \"user\": {\n            \"id\": 1,\n            \"name\": \"John Doe\",\n            \"email\": \"john@example.com\",\n            \"email_verified_at\": null,\n            \"created_at\": \"2024-01-01T00:00:00.000000Z\",\n            \"updated_at\": \"2024-01-01T00:00:00.000000Z\"\n        }\n    }\n}\n```"
+                    },
+                    "response": [
+                        {
+                            "name": "Success - 200 OK",
+                            "originalRequest": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{baseUrl}}/auth/me",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "auth",
+                                        "me"
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "body": "{\n    \"success\": true,\n    \"data\": {\n        \"user\": {\n            \"id\": 1,\n            \"name\": \"John Doe\",\n            \"email\": \"john@example.com\",\n            \"email_verified_at\": null,\n            \"created_at\": \"2024-01-01T00:00:00.000000Z\",\n            \"updated_at\": \"2024-01-01T00:00:00.000000Z\"\n        }\n    }\n}"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Categories",
+            "description": "Category management endpoints. Categories are predefined expense types.",
+            "item": [
+                {
+                    "name": "Get All Categories",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/categories",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "categories"
+                            ]
+                        },
+                        "description": "Get all active categories. This endpoint is public and can be cached.\n\n### Authentication\n🔓 Public (No auth required)\n\n### Response (200 OK)\n```json\n{\n    \"success\": true,\n    \"data\": [\n        {\n            \"id\": 1,\n            \"name\": \"Makan\",\n            \"icon\": \"utensils\",\n            \"description\": \"Pengeluaran untuk makan dan minum\"\n        },\n        {\n            \"id\": 2,\n            \"name\": \"Transport\",\n            \"icon\": \"car\",\n            \"description\": \"Pengeluaran transportasi\"\n        }\n    ]\n}\n```"
+                    },
+                    "response": [
+                        {
+                            "name": "Success - 200 OK",
+                            "originalRequest": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{baseUrl}}/categories",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "categories"
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "body": "{\n    \"success\": true,\n    \"data\": [\n        {\n            \"id\": 1,\n            \"name\": \"Makan\",\n            \"icon\": \"utensils\",\n            \"description\": \"Pengeluaran untuk makan dan minum\"\n        },\n        {\n            \"id\": 2,\n            \"name\": \"Transport\",\n            \"icon\": \"car\",\n            \"description\": \"Pengeluaran transportasi\"\n        },\n        {\n            \"id\": 3,\n            \"name\": \"Akomodasi\",\n            \"icon\": \"hotel\",\n            \"description\": \"Pengeluaran penginapan\"\n        }\n    ]\n}"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Clients",
+            "description": "Client management endpoints. Clients can be auto-registered from mobile app.",
+            "item": [
+                {
+                    "name": "Get Clients (Autocomplete)",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/clients?search=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "clients"
+                            ],
+                            "query": [
+                                {
+                                    "key": "search",
+                                    "value": "",
+                                    "description": "Optional: Filter clients by name (for autocomplete)"
+                                }
+                            ]
+                        },
+                        "description": "Get clients list for autocomplete functionality.\n\n### Authentication\n🔒 Requires Bearer Token\n\n### Query Parameters\n| Parameter | Type | Required | Description |\n|-----------|------|----------|-------------|\n| search | string | No | Filter clients by name (partial match) |\n\n### Response (200 OK)\n```json\n{\n    \"success\": true,\n    \"data\": [\n        {\n            \"id\": 1,\n            \"name\": \"PT ABC Indonesia\"\n        },\n        {\n            \"id\": 2,\n            \"name\": \"CV XYZ Mandiri\"\n        }\n    ]\n}\n```\n\n### Notes\n- Returns max 20 clients\n- Ordered alphabetically by name"
+                    },
+                    "response": [
+                        {
+                            "name": "Success - 200 OK",
+                            "originalRequest": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{baseUrl}}/clients?search=PT",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "clients"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "search",
+                                            "value": "PT"
+                                        }
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "body": "{\n    \"success\": true,\n    \"data\": [\n        {\n            \"id\": 1,\n            \"name\": \"PT ABC Indonesia\"\n        },\n        {\n            \"id\": 2,\n            \"name\": \"PT XYZ Mandiri\"\n        }\n    ]\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Create Client",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"PT New Client Indonesia\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/clients",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "clients"
+                            ]
+                        },
+                        "description": "Create a new client (auto-register from mobile app).\n\n### Authentication\n🔒 Requires Bearer Token\n\n### Request Body\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| name | string | Yes | Unique client name (max 255 chars) |\n\n### Response (201 Created)\n```json\n{\n    \"success\": true,\n    \"message\": \"Client berhasil ditambahkan\",\n    \"data\": {\n        \"id\": 3,\n        \"name\": \"PT New Client Indonesia\",\n        \"created_by\": 1,\n        \"is_auto_registered\": true,\n        \"created_at\": \"2024-01-01T00:00:00.000000Z\",\n        \"updated_at\": \"2024-01-01T00:00:00.000000Z\"\n    }\n}\n```"
+                    },
+                    "response": [
+                        {
+                            "name": "Success - 201 Created",
+                            "originalRequest": {
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"name\": \"PT New Client Indonesia\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/clients",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "clients"
+                                    ]
+                                }
+                            },
+                            "status": "Created",
+                            "code": 201,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "body": "{\n    \"success\": true,\n    \"message\": \"Client berhasil ditambahkan\",\n    \"data\": {\n        \"id\": 3,\n        \"name\": \"PT New Client Indonesia\",\n        \"created_by\": 1,\n        \"is_auto_registered\": true,\n        \"created_at\": \"2024-01-01T00:00:00.000000Z\",\n        \"updated_at\": \"2024-01-01T00:00:00.000000Z\"\n    }\n}"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Reimbursements",
+            "description": "Reimbursement CRUD operations and summary statistics.",
+            "item": [
+                {
+                    "name": "Get Reimbursements",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/reimbursements?status=&month=&year=&page=1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "reimbursements"
+                            ],
+                            "query": [
+                                {
+                                    "key": "status",
+                                    "value": "",
+                                    "description": "Optional: Filter by status (pending, approved, rejected)"
+                                },
+                                {
+                                    "key": "month",
+                                    "value": "",
+                                    "description": "Optional: Filter by month (1-12)"
+                                },
+                                {
+                                    "key": "year",
+                                    "value": "",
+                                    "description": "Optional: Filter by year (e.g., 2024)"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1",
+                                    "description": "Optional: Page number for pagination"
+                                }
+                            ]
+                        },
+                        "description": "Get current user's reimbursements with pagination and filters.\n\n### Authentication\n🔒 Requires Bearer Token\n\n### Query Parameters\n| Parameter | Type | Required | Description |\n|-----------|------|----------|-------------|\n| status | string | No | Filter by status: `pending`, `approved`, `rejected` |\n| month | integer | No | Filter by month (1-12) |\n| year | integer | No | Filter by year (e.g., 2024) |\n| page | integer | No | Page number (default: 1) |\n\n### Response (200 OK)\n```json\n{\n    \"success\": true,\n    \"data\": {\n        \"current_page\": 1,\n        \"data\": [\n            {\n                \"id\": 1,\n                \"user_id\": 1,\n                \"client_id\": 1,\n                \"category_id\": 1,\n                \"amount\": \"150000.00\",\n                \"transaction_date\": \"2024-01-15\",\n                \"note\": \"Meeting lunch\",\n                \"image_path\": \"receipts/abc123.jpg\",\n                \"status\": \"pending\",\n                \"client\": {\n                    \"id\": 1,\n                    \"name\": \"PT ABC\"\n                },\n                \"category\": {\n                    \"id\": 1,\n                    \"name\": \"Makan\",\n                    \"icon\": \"utensils\"\n                }\n            }\n        ],\n        \"per_page\": 20,\n        \"total\": 45\n    }\n}\n```"
+                    },
+                    "response": [
+                        {
+                            "name": "Success - 200 OK",
+                            "originalRequest": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{baseUrl}}/reimbursements?status=pending",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "reimbursements"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "status",
+                                            "value": "pending"
+                                        }
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "body": "{\n    \"success\": true,\n    \"data\": {\n        \"current_page\": 1,\n        \"data\": [\n            {\n                \"id\": 1,\n                \"user_id\": 1,\n                \"client_id\": 1,\n                \"category_id\": 1,\n                \"amount\": \"150000.00\",\n                \"transaction_date\": \"2024-01-15\",\n                \"note\": \"Meeting lunch\",\n                \"image_path\": \"receipts/abc123.jpg\",\n                \"status\": \"pending\",\n                \"client\": {\n                    \"id\": 1,\n                    \"name\": \"PT ABC\"\n                },\n                \"category\": {\n                    \"id\": 1,\n                    \"name\": \"Makan\",\n                    \"icon\": \"utensils\"\n                }\n            }\n        ],\n        \"per_page\": 20,\n        \"total\": 1\n    }\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Create Reimbursement",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "client_name",
+                                    "value": "PT ABC Indonesia",
+                                    "description": "Client name (will be created if not exists)",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "category_id",
+                                    "value": "1",
+                                    "description": "Category ID from categories list",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "amount",
+                                    "value": "150000",
+                                    "description": "Reimbursement amount in IDR",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "transaction_date",
+                                    "value": "2024-01-15",
+                                    "description": "Transaction date (YYYY-MM-DD)",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "note",
+                                    "value": "Meeting lunch with client",
+                                    "description": "Optional note",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "image",
+                                    "description": "Receipt image (max 20MB)",
+                                    "type": "file",
+                                    "src": ""
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/reimbursements",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "reimbursements"
+                            ]
+                        },
+                        "description": "Create a new reimbursement entry with receipt image.\n\n### Authentication\n🔒 Requires Bearer Token\n\n### Request Body (multipart/form-data)\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| client_name | string | Yes | Client name (max 255 chars, auto-creates if not exists) |\n| category_id | integer | Yes | Valid category ID |\n| amount | numeric | Yes | Amount in IDR (min 0) |\n| transaction_date | date | Yes | Date of transaction (YYYY-MM-DD) |\n| note | string | No | Additional note (max 1000 chars) |\n| image | file | Yes | Receipt image (max 20MB) |\n\n### Response (201 Created)\n```json\n{\n    \"success\": true,\n    \"message\": \"Reimbursement berhasil disimpan\",\n    \"data\": {\n        \"id\": 1,\n        \"user_id\": 1,\n        \"client_id\": 1,\n        \"category_id\": 1,\n        \"amount\": \"150000.00\",\n        \"transaction_date\": \"2024-01-15\",\n        \"note\": \"Meeting lunch with client\",\n        \"image_path\": \"receipts/abc123.jpg\",\n        \"status\": \"pending\",\n        \"client\": {\n            \"id\": 1,\n            \"name\": \"PT ABC Indonesia\"\n        },\n        \"category\": {\n            \"id\": 1,\n            \"name\": \"Makan\",\n            \"icon\": \"utensils\"\n        }\n    }\n}\n```"
+                    },
+                    "response": [
+                        {
+                            "name": "Success - 201 Created",
+                            "originalRequest": {
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "formdata",
+                                    "formdata": [
+                                        {
+                                            "key": "client_name",
+                                            "value": "PT ABC Indonesia",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "key": "category_id",
+                                            "value": "1",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "key": "amount",
+                                            "value": "150000",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "key": "transaction_date",
+                                            "value": "2024-01-15",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "key": "note",
+                                            "value": "Meeting lunch with client",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "key": "image",
+                                            "type": "file",
+                                            "src": ""
+                                        }
+                                    ]
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/reimbursements",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "reimbursements"
+                                    ]
+                                }
+                            },
+                            "status": "Created",
+                            "code": 201,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "body": "{\n    \"success\": true,\n    \"message\": \"Reimbursement berhasil disimpan\",\n    \"data\": {\n        \"id\": 1,\n        \"user_id\": 1,\n        \"client_id\": 1,\n        \"category_id\": 1,\n        \"amount\": \"150000.00\",\n        \"transaction_date\": \"2024-01-15\",\n        \"note\": \"Meeting lunch with client\",\n        \"image_path\": \"receipts/abc123.jpg\",\n        \"status\": \"pending\",\n        \"client\": {\n            \"id\": 1,\n            \"name\": \"PT ABC Indonesia\"\n        },\n        \"category\": {\n            \"id\": 1,\n            \"name\": \"Makan\",\n            \"icon\": \"utensils\"\n        }\n    }\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Reimbursement Detail",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/reimbursements/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "reimbursements",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1",
+                                    "description": "Reimbursement ID"
+                                }
+                            ]
+                        },
+                        "description": "Get detailed information about a specific reimbursement.\n\n### Authentication\n🔒 Requires Bearer Token\n\n### Path Parameters\n| Parameter | Type | Required | Description |\n|-----------|------|----------|-------------|\n| id | integer | Yes | Reimbursement ID |\n\n### Response (200 OK)\n```json\n{\n    \"success\": true,\n    \"data\": {\n        \"id\": 1,\n        \"user_id\": 1,\n        \"client_id\": 1,\n        \"category_id\": 1,\n        \"report_id\": null,\n        \"amount\": \"150000.00\",\n        \"transaction_date\": \"2024-01-15\",\n        \"note\": \"Meeting lunch\",\n        \"image_path\": \"receipts/abc123.jpg\",\n        \"status\": \"pending\",\n        \"created_at\": \"2024-01-15T10:00:00.000000Z\",\n        \"updated_at\": \"2024-01-15T10:00:00.000000Z\",\n        \"client\": {\n            \"id\": 1,\n            \"name\": \"PT ABC\"\n        },\n        \"category\": {\n            \"id\": 1,\n            \"name\": \"Makan\",\n            \"icon\": \"utensils\"\n        },\n        \"report\": null\n    }\n}\n```\n\n### Error (403 Forbidden)\nReturned when trying to access another user's reimbursement.\n```json\n{\n    \"success\": false,\n    \"message\": \"Tidak diizinkan\"\n}\n```"
+                    },
+                    "response": [
+                        {
+                            "name": "Success - 200 OK",
+                            "originalRequest": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{baseUrl}}/reimbursements/1",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "reimbursements",
+                                        "1"
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "body": "{\n    \"success\": true,\n    \"data\": {\n        \"id\": 1,\n        \"user_id\": 1,\n        \"client_id\": 1,\n        \"category_id\": 1,\n        \"report_id\": null,\n        \"amount\": \"150000.00\",\n        \"transaction_date\": \"2024-01-15\",\n        \"note\": \"Meeting lunch\",\n        \"image_path\": \"receipts/abc123.jpg\",\n        \"status\": \"pending\",\n        \"created_at\": \"2024-01-15T10:00:00.000000Z\",\n        \"updated_at\": \"2024-01-15T10:00:00.000000Z\",\n        \"client\": {\n            \"id\": 1,\n            \"name\": \"PT ABC\"\n        },\n        \"category\": {\n            \"id\": 1,\n            \"name\": \"Makan\",\n            \"icon\": \"utensils\"\n        },\n        \"report\": null\n    }\n}"
+                        },
+                        {
+                            "name": "Error - 403 Forbidden",
+                            "originalRequest": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{baseUrl}}/reimbursements/999",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "reimbursements",
+                                        "999"
+                                    ]
+                                }
+                            },
+                            "status": "Forbidden",
+                            "code": 403,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "body": "{\n    \"success\": false,\n    \"message\": \"Tidak diizinkan\"\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Update Reimbursement",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "_method",
+                                    "value": "PUT",
+                                    "description": "Method override for form-data",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "client_name",
+                                    "value": "PT Updated Client",
+                                    "description": "Optional: Update client name",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "category_id",
+                                    "value": "2",
+                                    "description": "Optional: Update category",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "amount",
+                                    "value": "200000",
+                                    "description": "Optional: Update amount",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "transaction_date",
+                                    "value": "2024-01-16",
+                                    "description": "Optional: Update date",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "note",
+                                    "value": "Updated note",
+                                    "description": "Optional: Update note",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "image",
+                                    "description": "Optional: Update receipt image",
+                                    "type": "file",
+                                    "src": ""
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/reimbursements/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "reimbursements",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1",
+                                    "description": "Reimbursement ID"
+                                }
+                            ]
+                        },
+                        "description": "Update a pending reimbursement. Only entries with status 'pending' can be updated.\n\n### Authentication\n🔒 Requires Bearer Token\n\n### Path Parameters\n| Parameter | Type | Required | Description |\n|-----------|------|----------|-------------|\n| id | integer | Yes | Reimbursement ID |\n\n### Request Body (multipart/form-data)\nAll fields are optional - only send fields you want to update:\n\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| _method | string | Yes | Must be \"PUT\" for form-data |\n| client_name | string | No | New client name |\n| category_id | integer | No | New category ID |\n| amount | numeric | No | New amount |\n| transaction_date | date | No | New transaction date |\n| note | string | No | New note (can be null) |\n| image | file | No | New receipt image (max 20MB) |\n\n### Response (200 OK)\n```json\n{\n    \"success\": true,\n    \"message\": \"Reimbursement berhasil diupdate\",\n    \"data\": {\n        \"id\": 1,\n        \"amount\": \"200000.00\",\n        \"client\": {\n            \"id\": 2,\n            \"name\": \"PT Updated Client\"\n        }\n    }\n}\n```\n\n### Error (422 Unprocessable Entity)\nReturned when trying to update non-pending reimbursement.\n```json\n{\n    \"success\": false,\n    \"message\": \"Hanya entry pending yang bisa diubah\"\n}\n```"
+                    },
+                    "response": [
+                        {
+                            "name": "Success - 200 OK",
+                            "originalRequest": {
+                                "method": "PUT",
+                                "header": [],
+                                "body": {
+                                    "mode": "formdata",
+                                    "formdata": [
+                                        {
+                                            "key": "_method",
+                                            "value": "PUT",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "key": "amount",
+                                            "value": "200000",
+                                            "type": "text"
+                                        }
+                                    ]
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/reimbursements/1",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "reimbursements",
+                                        "1"
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "body": "{\n    \"success\": true,\n    \"message\": \"Reimbursement berhasil diupdate\",\n    \"data\": {\n        \"id\": 1,\n        \"user_id\": 1,\n        \"client_id\": 1,\n        \"category_id\": 1,\n        \"amount\": \"200000.00\",\n        \"transaction_date\": \"2024-01-15\",\n        \"note\": \"Updated note\",\n        \"image_path\": \"receipts/abc123.jpg\",\n        \"status\": \"pending\",\n        \"client\": {\n            \"id\": 1,\n            \"name\": \"PT ABC\"\n        },\n        \"category\": {\n            \"id\": 1,\n            \"name\": \"Makan\",\n            \"icon\": \"utensils\"\n        }\n    }\n}"
+                        },
+                        {
+                            "name": "Error - 422 Not Pending",
+                            "originalRequest": {
+                                "method": "PUT",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{baseUrl}}/reimbursements/1",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "reimbursements",
+                                        "1"
+                                    ]
+                                }
+                            },
+                            "status": "Unprocessable Entity",
+                            "code": 422,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "body": "{\n    \"success\": false,\n    \"message\": \"Hanya entry pending yang bisa diubah\"\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Dashboard Summary",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/reimbursements/summary",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "reimbursements",
+                                "summary"
+                            ]
+                        },
+                        "description": "Get dashboard statistics for current user.\n\n### Authentication\n🔒 Requires Bearer Token\n\n### Response (200 OK)\n```json\n{\n    \"success\": true,\n    \"data\": {\n        \"monthly_total\": 1500000.00,\n        \"monthly_count\": 15,\n        \"pending_count\": 5,\n        \"all_time_total\": 25000000.00\n    }\n}\n```\n\n### Response Fields\n| Field | Type | Description |\n|-------|------|-------------|\n| monthly_total | float | Total reimbursement amount this month |\n| monthly_count | integer | Number of reimbursements this month |\n| pending_count | integer | Number of pending reimbursements (all time) |\n| all_time_total | float | Total reimbursement amount (all time) |"
+                    },
+                    "response": [
+                        {
+                            "name": "Success - 200 OK",
+                            "originalRequest": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{baseUrl}}/reimbursements/summary",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "reimbursements",
+                                        "summary"
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "body": "{\n    \"success\": true,\n    \"data\": {\n        \"monthly_total\": 1500000.00,\n        \"monthly_count\": 15,\n        \"pending_count\": 5,\n        \"all_time_total\": 25000000.00\n    }\n}"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Reports",
+            "description": "PDF report management endpoints.",
+            "item": [
+                {
+                    "name": "Get Reports",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/reports",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "reports"
+                            ]
+                        },
+                        "description": "Get all reports for current user.\n\n### Authentication\n🔒 Requires Bearer Token\n\n### Response (200 OK)\n```json\n{\n    \"success\": true,\n    \"data\": [\n        {\n            \"id\": 1,\n            \"user_id\": 1,\n            \"period_start\": \"2024-01-01\",\n            \"period_end\": \"2024-01-31\",\n            \"total_amount\": \"1500000.00\",\n            \"total_entries\": 15,\n            \"pdf_path\": \"reports/2024-01_abc123.pdf\",\n            \"status\": \"generated\",\n            \"created_at\": \"2024-02-01T10:00:00.000000Z\",\n            \"updated_at\": \"2024-02-01T10:00:00.000000Z\"\n        }\n    ]\n}\n```\n\n### Notes\n- Reports are ordered by period_start descending (newest first)"
+                    },
+                    "response": [
+                        {
+                            "name": "Success - 200 OK",
+                            "originalRequest": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{baseUrl}}/reports",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "reports"
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "body": "{\n    \"success\": true,\n    \"data\": [\n        {\n            \"id\": 1,\n            \"user_id\": 1,\n            \"period_start\": \"2024-01-01\",\n            \"period_end\": \"2024-01-31\",\n            \"total_amount\": \"1500000.00\",\n            \"total_entries\": 15,\n            \"pdf_path\": \"reports/2024-01_abc123.pdf\",\n            \"status\": \"generated\",\n            \"created_at\": \"2024-02-01T10:00:00.000000Z\",\n            \"updated_at\": \"2024-02-01T10:00:00.000000Z\"\n        },\n        {\n            \"id\": 2,\n            \"user_id\": 1,\n            \"period_start\": \"2023-12-01\",\n            \"period_end\": \"2023-12-31\",\n            \"total_amount\": \"2000000.00\",\n            \"total_entries\": 20,\n            \"pdf_path\": \"reports/2023-12_def456.pdf\",\n            \"status\": \"generated\",\n            \"created_at\": \"2024-01-01T10:00:00.000000Z\",\n            \"updated_at\": \"2024-01-01T10:00:00.000000Z\"\n        }\n    ]\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Download Report PDF",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/pdf"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/reports/:id/download",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "reports",
+                                ":id",
+                                "download"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1",
+                                    "description": "Report ID"
+                                }
+                            ]
+                        },
+                        "description": "Download the PDF file for a specific report.\n\n### Authentication\n🔒 Requires Bearer Token\n\n### Path Parameters\n| Parameter | Type | Required | Description |\n|-----------|------|----------|-------------|\n| id | integer | Yes | Report ID |\n\n### Response (200 OK)\nReturns PDF file download with filename: `Reimburse_YYYY-MM.pdf`\n\n### Error Responses\n\n#### 403 Forbidden\nReturned when trying to access another user's report.\n```json\n{\n    \"success\": false,\n    \"message\": \"Tidak diizinkan\"\n}\n```\n\n#### 404 Not Found\nReturned when PDF file is not available.\n```json\n{\n    \"success\": false,\n    \"message\": \"PDF belum tersedia\"\n}\n```"
+                    },
+                    "response": [
+                        {
+                            "name": "Error - 403 Forbidden",
+                            "originalRequest": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{baseUrl}}/reports/999/download",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "reports",
+                                        "999",
+                                        "download"
+                                    ]
+                                }
+                            },
+                            "status": "Forbidden",
+                            "code": 403,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "body": "{\n    \"success\": false,\n    \"message\": \"Tidak diizinkan\"\n}"
+                        },
+                        {
+                            "name": "Error - 404 Not Found",
+                            "originalRequest": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{baseUrl}}/reports/1/download",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "reports",
+                                        "1",
+                                        "download"
+                                    ]
+                                }
+                            },
+                            "status": "Not Found",
+                            "code": 404,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "body": "{\n    \"success\": false,\n    \"message\": \"PDF belum tersedia\"\n}"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{token}}",
+                "type": "string"
+            }
+        ]
+    },
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        },
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        }
+    ]
+}

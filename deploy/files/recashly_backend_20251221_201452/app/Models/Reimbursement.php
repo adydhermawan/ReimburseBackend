@@ -1,0 +1,125 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class Reimbursement extends Model
+{
+    use HasFactory;
+
+    /**
+     * Boot the model - cache invalidation on changes.
+     */
+    protected static function booted(): void
+    {
+        static::saved(function ($reimbursement) {
+            \Illuminate\Support\Facades\Cache::forget("user_{$reimbursement->user_id}_pending_summary");
+        });
+
+        static::deleted(function ($reimbursement) {
+            \Illuminate\Support\Facades\Cache::forget("user_{$reimbursement->user_id}_pending_summary");
+        });
+    }
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        'user_id',
+        'client_id',
+        'category_id',
+        'amount',
+        'transaction_date',
+        'note',
+        'image_path',
+        'status',
+        'report_id',
+    ];
+
+    /**
+     * Status constants
+     */
+    const STATUS_PENDING = 'pending';
+    const STATUS_APPROVED = 'approved';
+    const STATUS_REJECTED = 'rejected';
+    const STATUS_IN_REPORT = 'in_report';
+    const STATUS_PAID = 'paid';
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'amount' => 'decimal:2',
+            'transaction_date' => 'date',
+        ];
+    }
+
+    /**
+     * Get the user that owns the reimbursement.
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the client for the reimbursement.
+     */
+    public function client(): BelongsTo
+    {
+        return $this->belongsTo(Client::class);
+    }
+
+    /**
+     * Get the category for the reimbursement.
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    /**
+     * Get the report for the reimbursement.
+     */
+    public function report(): BelongsTo
+    {
+        return $this->belongsTo(Report::class);
+    }
+
+    /**
+     * Get the image URL.
+     */
+    public function getImageUrlAttribute(): ?string
+    {
+        if (!$this->image_path) {
+            return null;
+        }
+
+        return asset('storage/' . $this->image_path);
+    }
+
+    /**
+     * Scope a query to only include pending reimbursements.
+     */
+    public function scopePending($query)
+    {
+        return $query->where('status', self::STATUS_PENDING);
+    }
+
+    /**
+     * Scope a query to only include reimbursements not in a report.
+     */
+    public function scopeNotInReport($query)
+    {
+        return $query->whereNull('report_id');
+    }
+}
