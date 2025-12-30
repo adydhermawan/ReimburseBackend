@@ -110,7 +110,21 @@ class Reimbursement extends Model
             return null;
         }
 
-        return Storage::url($this->image_path);
+        // If already a full URL (Cloudinary), return as-is
+        if (str_starts_with($this->image_path, 'http://') || str_starts_with($this->image_path, 'https://')) {
+            return $this->image_path;
+        }
+
+        try {
+            return Storage::url($this->image_path);
+        } catch (\Exception $e) {
+            // Fallback: construct Cloudinary URL manually
+            $cloudName = config('filesystems.disks.cloudinary.cloud_name');
+            if ($cloudName) {
+                return "https://res.cloudinary.com/{$cloudName}/image/upload/{$this->image_path}";
+            }
+            return null;
+        }
     }
 
     /**
