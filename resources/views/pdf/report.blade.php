@@ -277,8 +277,8 @@
                     @foreach($row as $item)
                     <div class="image-cell">
                         <div class="image-container">
-                            @if($item->image_path && file_exists(storage_path('app/public/' . $item->image_path)))
-                                <img src="{{ storage_path('app/public/' . $item->image_path) }}" alt="Receipt">
+                            @if($item->image_path)
+                                <img src="{{ Storage::url($item->image_path) }}" alt="Receipt">
                             @else
                                 <div style="height: 200px; background: #f5f5f5; display: flex; align-items: center; justify-content: center; color: #999;">
                                     Image not available

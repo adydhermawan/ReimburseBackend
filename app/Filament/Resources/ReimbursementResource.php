@@ -100,7 +100,14 @@ class ReimbursementResource extends Resource
                         Forms\Components\FileUpload::make('image_path')
                             ->label('Receipt Image')
                             ->image()
-                            ->directory(config('filesystems.default') === 'cloudinary' ? 'home/recashly' : 'receipts')
+                            ->directory(function (?Reimbursement $record) {
+                                if (config('filesystems.default') !== 'cloudinary') {
+                                    return 'receipts';
+                                }
+                                $userId = $record?->user_id ?? auth()->id();
+                                $month = now()->format('Y-m');
+                                return "recashy/{$userId}/{$month}";
+                            })
                             ->visibility('public')
                             ->imageEditor()
                             ->maxSize(5120)

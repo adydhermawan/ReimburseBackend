@@ -83,8 +83,12 @@ class ReimbursementController extends Controller
                 ]
             );
 
-            // Store image
-            $directory = config('filesystems.default') === 'cloudinary' ? 'home/recashly' : 'receipts';
+            // Store image with dynamic folder: recashy/{user_id}/{month}
+            $user = $request->user();
+            $month = now()->format('Y-m');
+            $directory = config('filesystems.default') === 'cloudinary' 
+                ? "recashy/{$user->id}/{$month}" 
+                : 'receipts';
             $imagePath = $request->file('image')->store($directory);
 
             // Create reimbursement
@@ -180,7 +184,12 @@ class ReimbursementController extends Controller
                 if ($reimbursement->image_path) {
                     Storage::delete($reimbursement->image_path);
                 }
-                $directory = config('filesystems.default') === 'cloudinary' ? 'home/recashly' : 'receipts';
+                // Store image with dynamic folder: recashy/{user_id}/{month}
+                $user = $request->user();
+                $month = now()->format('Y-m');
+                $directory = config('filesystems.default') === 'cloudinary' 
+                    ? "recashy/{$user->id}/{$month}" 
+                    : 'receipts';
                 $reimbursement->image_path = $request->file('image')->store($directory);
             }
 

@@ -26,10 +26,10 @@ class PdfReportService
         $pdf->setOption('isRemoteEnabled', true);
         $pdf->setOption('isHtml5ParserEnabled', true);
 
-        // Generate filename
+        // Generate filename with dynamic folder: recashy/{user_id}/report/
         $filename = sprintf(
-            'reports/%s_%s_%s.pdf',
-            $report->user->name,
+            'recashy/%s/report/%s_%s.pdf',
+            $report->user->id,
             $report->period_start->format('Ym'),
             $report->id
         );

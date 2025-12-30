@@ -12,6 +12,11 @@ class Reimbursement extends Model
     use HasFactory;
 
     /**
+     * The accessors to append to the model's array form.
+     */
+    protected $appends = ['image_url'];
+
+    /**
      * Boot the model - cache invalidation on changes.
      */
     protected static function booted(): void
