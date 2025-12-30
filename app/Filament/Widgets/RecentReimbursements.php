@@ -25,7 +25,7 @@ class RecentReimbursements extends BaseWidget
             ->columns([
                 Tables\Columns\ImageColumn::make('image_path')
                     ->label('')
-                    ->disk('public')
+                    ->disk('cloudinary')
                     ->circular()
                     ->size(40),
 

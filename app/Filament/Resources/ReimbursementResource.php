@@ -126,6 +126,7 @@ class ReimbursementResource extends Resource
 
                 Tables\Columns\ImageColumn::make('image_path')
                     ->label('Receipt')
+                    ->disk('cloudinary')
                     ->circular()
                     ->defaultImageUrl(url('/images/placeholder.png')),
 
@@ -248,6 +249,7 @@ class ReimbursementResource extends Resource
                     ->schema([
                         Infolists\Components\ImageEntry::make('image_path')
                             ->label('')
+                            ->disk('cloudinary')
                             ->height(300),
                     ]),
 
