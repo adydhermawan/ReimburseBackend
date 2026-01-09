@@ -28,6 +28,11 @@ class ReimbursementResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->with(['user', 'client', 'category']);
+    }
+
     public static function form(Form $form): Form
     {
         return $form
