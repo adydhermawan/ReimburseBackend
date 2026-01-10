@@ -133,7 +133,8 @@ class ReimbursementResource extends Resource
                     ->label('Receipt')
                     ->disk('cloudinary')
                     ->circular()
-                    ->defaultImageUrl(url('/images/placeholder.png')),
+                    ->defaultImageUrl(url('/images/placeholder.png'))
+                    ->extraImgAttributes(['loading' => 'lazy']),
 
                 Tables\Columns\TextColumn::make('transaction_date')
                     ->label('Date')
