@@ -30,7 +30,14 @@ class ReportResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['user']);
+        $query = parent::getEloquentQuery()->with(['user']);
+        
+        // Non-admin users can only see their own reports
+        if (!auth()->user()->is_admin) {
+            $query->where('user_id', auth()->id());
+        }
+        
+        return $query;
     }
 
     public static function form(Form $form): Form
