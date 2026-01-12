@@ -33,7 +33,7 @@ class ReimbursementResource extends Resource
         $query = parent::getEloquentQuery()->with(['user', 'client', 'category']);
         
         // Non-admin users can only see their own reimbursements
-        if (!auth()->user()->is_admin) {
+        if (!auth()->user()->isAdmin()) {
             $query->where('user_id', auth()->id());
         }
         

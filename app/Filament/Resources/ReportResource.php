@@ -33,7 +33,7 @@ class ReportResource extends Resource
         $query = parent::getEloquentQuery()->with(['user']);
         
         // Non-admin users can only see their own reports
-        if (!auth()->user()->is_admin) {
+        if (!auth()->user()->isAdmin()) {
             $query->where('user_id', auth()->id());
         }
         
