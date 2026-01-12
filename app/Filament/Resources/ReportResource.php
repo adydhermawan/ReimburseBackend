@@ -308,7 +308,14 @@ class ReportResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::where('status', 'submitted')->count() ?: null;
+        $query = static::getModel()::where('status', 'submitted');
+        
+        // Non-admin users only see their own submitted count
+        if (!auth()->user()->isAdmin()) {
+            $query->where('user_id', auth()->id());
+        }
+        
+        return $query->count() ?: null;
     }
 
     public static function getNavigationBadgeColor(): ?string
