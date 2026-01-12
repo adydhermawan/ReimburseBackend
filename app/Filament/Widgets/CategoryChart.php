@@ -14,12 +14,18 @@ class CategoryChart extends ChartWidget
 
     protected function getData(): array
     {
-        $data = Reimbursement::query()
+        $query = Reimbursement::query()
             ->join('categories', 'reimbursements.category_id', '=', 'categories.id')
             ->select('categories.name', DB::raw('SUM(reimbursements.amount) as total'))
             ->whereMonth('reimbursements.transaction_date', now()->month)
-            ->whereYear('reimbursements.transaction_date', now()->year)
-            ->groupBy('categories.id', 'categories.name')
+            ->whereYear('reimbursements.transaction_date', now()->year);
+        
+        // Non-admin users only see their own data
+        if (!auth()->user()->isAdmin()) {
+            $query->where('reimbursements.user_id', auth()->id());
+        }
+        
+        $data = $query->groupBy('categories.id', 'categories.name')
             ->orderBy('total', 'desc')
             ->get();
 

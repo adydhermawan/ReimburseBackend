@@ -15,13 +15,18 @@ class RecentReimbursements extends BaseWidget
 
     public function table(Table $table): Table
     {
+        $query = Reimbursement::query()
+            ->with(['user', 'client', 'category'])
+            ->orderBy('created_at', 'desc')
+            ->limit(5);
+        
+        // Non-admin users only see their own reimbursements
+        if (!auth()->user()->isAdmin()) {
+            $query->where('user_id', auth()->id());
+        }
+        
         return $table
-            ->query(
-                Reimbursement::query()
-                    ->with(['user', 'client', 'category'])
-                    ->orderBy('created_at', 'desc')
-                    ->limit(5)
-            )
+            ->query($query)
             ->columns([
                 Tables\Columns\ImageColumn::make('image_path')
                     ->label('')

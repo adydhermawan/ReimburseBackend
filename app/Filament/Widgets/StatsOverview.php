@@ -16,29 +16,54 @@ class StatsOverview extends BaseWidget
     {
         $currentMonth = now()->startOfMonth();
         $lastMonth = now()->subMonth()->startOfMonth();
+        $isAdmin = auth()->user()->isAdmin();
+        $userId = auth()->id();
 
         // Current month stats
-        $currentMonthTotal = Reimbursement::whereMonth('transaction_date', now()->month)
-            ->whereYear('transaction_date', now()->year)
-            ->sum('amount');
+        $currentMonthQuery = Reimbursement::whereMonth('transaction_date', now()->month)
+            ->whereYear('transaction_date', now()->year);
+        
+        if (!$isAdmin) {
+            $currentMonthQuery->where('user_id', $userId);
+        }
+        
+        $currentMonthTotal = $currentMonthQuery->sum('amount');
 
-        $lastMonthTotal = Reimbursement::whereMonth('transaction_date', $lastMonth->month)
-            ->whereYear('transaction_date', $lastMonth->year)
-            ->sum('amount');
+        $lastMonthQuery = Reimbursement::whereMonth('transaction_date', $lastMonth->month)
+            ->whereYear('transaction_date', $lastMonth->year);
+        
+        if (!$isAdmin) {
+            $lastMonthQuery->where('user_id', $userId);
+        }
+        
+        $lastMonthTotal = $lastMonthQuery->sum('amount');
 
         $totalTrend = $lastMonthTotal > 0
             ? round((($currentMonthTotal - $lastMonthTotal) / $lastMonthTotal) * 100, 1)
             : 0;
 
         // Entry counts
-        $currentMonthEntries = Reimbursement::whereMonth('transaction_date', now()->month)
-            ->whereYear('transaction_date', now()->year)
-            ->count();
+        $entriesQuery = Reimbursement::whereMonth('transaction_date', now()->month)
+            ->whereYear('transaction_date', now()->year);
+        
+        if (!$isAdmin) {
+            $entriesQuery->where('user_id', $userId);
+        }
+        
+        $currentMonthEntries = $entriesQuery->count();
 
-        $pendingCount = Reimbursement::where('status', 'pending')->count();
+        $pendingQuery = Reimbursement::where('status', 'pending');
+        if (!$isAdmin) {
+            $pendingQuery->where('user_id', $userId);
+        }
+        $pendingCount = $pendingQuery->count();
 
         // Pending reports
-        $pendingReports = Report::whereIn('status', ['draft', 'submitted'])->count();
+        $reportsQuery = Report::whereIn('status', ['draft', 'submitted']);
+        if (!$isAdmin) {
+            $reportsQuery->where('user_id', $userId);
+        }
+        $pendingReports = $reportsQuery->count();
 
         return [
             Stat::make('Total Bulan Ini', 'Rp ' . number_format($currentMonthTotal, 0, ',', '.'))
