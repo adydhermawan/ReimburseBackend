@@ -17,7 +17,9 @@ class User extends Authenticatable implements FilamentUser
     
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->isAdmin();
+        // Allow all authenticated users to access the panel
+        // Data visibility is controlled by getEloquentQuery() in each Resource
+        return true;
     }
 
     /**
