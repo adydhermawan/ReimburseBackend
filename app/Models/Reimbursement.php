@@ -39,6 +39,7 @@ class Reimbursement extends Model
         'user_id',
         'client_id',
         'category_id',
+        'category_name',
         'amount',
         'transaction_date',
         'note',
@@ -125,6 +126,19 @@ class Reimbursement extends Model
             }
             return null;
         }
+
+    /**
+     * Get the display category name.
+     * Returns category relationship name if exists, otherwise custom category_name.
+     */
+    public function getCategoryDisplayNameAttribute(): ?string
+    {
+        if ($this->category_id && $this->category) {
+            return $this->category->name;
+        }
+        
+        return $this->category_name;
+    }
     }
 
     /**

@@ -66,12 +66,21 @@ class ReimbursementController extends Controller
     {
         $validated = $request->validate([
             'client_name' => 'required|string|max:255',
-            'category_id' => 'required|exists:categories,id',
+            'category_id' => 'nullable|exists:categories,id',
+            'category_name' => 'nullable|string|max:255',
             'amount' => 'required|numeric|min:0',
             'transaction_date' => 'required|date',
             'note' => 'nullable|string|max:1000',
             'image' => 'required|image|max:20480', // 20MB max
         ]);
+
+        // Validate that at least one of category_id or category_name is provided
+        if (empty($validated['category_id']) && empty($validated['category_name'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Either category_id or category_name must be provided',
+            ], 422);
+        }
 
         return DB::transaction(function () use ($request, $validated) {
             // Find or create client
@@ -95,7 +104,8 @@ class ReimbursementController extends Controller
             $reimbursement = Reimbursement::create([
                 'user_id' => $request->user()->id,
                 'client_id' => $client->id,
-                'category_id' => $validated['category_id'],
+                'category_id' => $validated['category_id'] ?? null,
+                'category_name' => $validated['category_name'] ?? null,
                 'amount' => $validated['amount'],
                 'transaction_date' => $validated['transaction_date'],
                 'note' => $validated['note'] ?? null,
@@ -157,7 +167,8 @@ class ReimbursementController extends Controller
 
         $validated = $request->validate([
             'client_name' => 'sometimes|string|max:255',
-            'category_id' => 'sometimes|exists:categories,id',
+            'category_id' => 'sometimes|nullable|exists:categories,id',
+            'category_name' => 'sometimes|nullable|string|max:255',
             'amount' => 'sometimes|numeric|min:0',
             'transaction_date' => 'sometimes|date',
             'note' => 'nullable|string|max:1000',
@@ -196,6 +207,13 @@ class ReimbursementController extends Controller
             // Update other fields
             if (isset($validated['category_id'])) {
                 $reimbursement->category_id = $validated['category_id'];
+                $reimbursement->category_name = null; // Clear custom name when setting category_id
+            }
+            if (isset($validated['category_name'])) {
+                $reimbursement->category_name = $validated['category_name'];
+                if (empty($validated['category_id'])) {
+                    $reimbursement->category_id = null; // Clear category_id when using custom name
+                }
             }
             if (isset($validated['amount'])) {
                 $reimbursement->amount = $validated['amount'];
