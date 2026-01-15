@@ -122,10 +122,11 @@ class Reimbursement extends Model
             // Fallback: construct Cloudinary URL manually
             $cloudName = config('filesystems.disks.cloudinary.cloud_name');
             if ($cloudName) {
-                return "https://res.cloudinary.com/{$cloudName}/image/upload/{$this->image_path}";
+            return "https://res.cloudinary.com/{$cloudName}/image/upload/{$this->image_path}";
             }
             return null;
         }
+    }
 
     /**
      * Get the display category name.
@@ -139,7 +140,7 @@ class Reimbursement extends Model
         
         return $this->category_name;
     }
-    }
+
 
     /**
      * Scope a query to only include pending reimbursements.
