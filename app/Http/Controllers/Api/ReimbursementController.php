@@ -54,12 +54,6 @@ class ReimbursementController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
-        // Hide heavy image properties from the list view to improve performance
-        $reimbursements->getCollection()->transform(function ($reimbursement) {
-            $reimbursement->makeHidden(['image_path', 'image_url']);
-            return $reimbursement;
-        });
-
         return response()->json([
             'success' => true,
             'data' => $reimbursements,
@@ -126,7 +120,6 @@ class ReimbursementController extends Controller
                 'user_id' => $request->user()->id,
                 'client_id' => $client->id,
                 'category_id' => $validated['category_id'] ?? null,
-                'category_name' => $validated['category_name'] ?? null,
                 'amount' => $validated['amount'],
                 'transaction_date' => $validated['transaction_date'],
                 'note' => $validated['note'] ?? null,
@@ -228,13 +221,6 @@ class ReimbursementController extends Controller
             // Update other fields
             if (isset($validated['category_id'])) {
                 $reimbursement->category_id = $validated['category_id'];
-                $reimbursement->category_name = null; // Clear custom name when setting category_id
-            }
-            if (isset($validated['category_name'])) {
-                $reimbursement->category_name = $validated['category_name'];
-                if (empty($validated['category_id'])) {
-                    $reimbursement->category_id = null; // Clear category_id when using custom name
-                }
             }
             if (isset($validated['amount'])) {
                 $reimbursement->amount = $validated['amount'];
