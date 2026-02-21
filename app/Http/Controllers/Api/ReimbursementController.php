@@ -54,6 +54,12 @@ class ReimbursementController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
+        // Hide heavy image properties from the list view to improve performance
+        $reimbursements->getCollection()->transform(function ($reimbursement) {
+            $reimbursement->makeHidden(['image_path', 'image_url']);
+            return $reimbursement;
+        });
+
         return response()->json([
             'success' => true,
             'data' => $reimbursements,

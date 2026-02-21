@@ -136,12 +136,7 @@ class ReimbursementResource extends Resource
                     ->label('ID')
                     ->sortable(),
 
-                Tables\Columns\ImageColumn::make('image_path')
-                    ->label('Receipt')
-                    ->disk('cloudinary')
-                    ->circular()
-                    ->defaultImageUrl(url('/images/placeholder.png'))
-                    ->extraImgAttributes(['loading' => 'lazy']),
+
 
                 Tables\Columns\TextColumn::make('transaction_date')
                     ->label('Date')
@@ -251,7 +246,8 @@ class ReimbursementResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultSort('transaction_date', 'desc');
+            ->defaultSort('transaction_date', 'desc')
+            ->paginated([10, 25, 50, 100, 'all']);
     }
 
     public static function infolist(Infolist $infolist): Infolist
@@ -318,14 +314,22 @@ class ReimbursementResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        $query = static::getModel()::where('status', 'pending');
+        $userId = auth()->id();
+        $isAdmin = auth()->user()->isAdmin();
         
-        // Non-admin users only see their own pending count
-        if (!auth()->user()->isAdmin()) {
-            $query->where('user_id', auth()->id());
-        }
-        
-        return $query->count() ?: null;
+        $cacheKey = "reimbursements_pending_count_user_{$userId}_admin_{$isAdmin}";
+
+        $count = \Illuminate\Support\Facades\Cache::remember($cacheKey, now()->addMinutes(5), function () use ($isAdmin, $userId) {
+            $query = static::getModel()::where('status', 'pending');
+            
+            if (!$isAdmin) {
+                $query->where('user_id', $userId);
+            }
+            
+            return $query->count();
+        });
+
+        return $count ?: null;
     }
 
     public static function getNavigationBadgeColor(): ?string
