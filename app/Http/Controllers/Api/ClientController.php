@@ -21,7 +21,7 @@ class ClientController extends Controller
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        $clients = $query->orderBy('name')
+        $clients = $query->orderBy('created_at', 'desc')
             ->limit(20)
             ->get(['id', 'name']);
 

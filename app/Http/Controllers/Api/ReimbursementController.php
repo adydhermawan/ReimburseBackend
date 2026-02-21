@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Reimbursement;
 use App\Models\Client;
 use Illuminate\Http\Request;
@@ -99,6 +100,20 @@ class ReimbursementController extends Controller
                 ? "recashy/{$user->id}/{$month}" 
                 : 'receipts';
             $imagePath = $request->file('image')->store($directory);
+
+            // If category_id is not provided but category_name is, find or create the category
+            if (empty($validated['category_id']) && !empty($validated['category_name'])) {
+                $category = Category::firstOrCreate(
+                    ['name' => $validated['category_name']],
+                    [
+                        'is_active' => true,
+                        // Default icon
+                        'icon' => 'heroicon-o-document-text',
+                        'description' => 'Created from mobile app',
+                    ]
+                );
+                $validated['category_id'] = $category->id;
+            }
 
             // Create reimbursement
             $reimbursement = Reimbursement::create([

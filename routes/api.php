@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ScanReceiptController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
@@ -137,6 +138,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reports/{report}/download', [ReportController::class, 'download']);
     Route::post('/reports/{report}/generate', [ReportController::class, 'generate']);
     Route::post('/reports/{report}/paid', [ReportController::class, 'markAsPaid']);
+
+    // AI Receipt Scanning
+    Route::post('/scan-receipt', [ScanReceiptController::class, 'store']);
 
     // App Version Management (admin only)
     Route::post('/app-version', [AppVersionController::class, 'store']);
