@@ -54,6 +54,12 @@ class ReimbursementController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
+        // Hide image fields from list response to prevent slow Cloudinary URL resolution per item
+        $reimbursements->getCollection()->transform(function ($item) {
+            $item->makeHidden(['image_path', 'image_url']);
+            return $item;
+        });
+
         return response()->json([
             'success' => true,
             'data' => $reimbursements,
