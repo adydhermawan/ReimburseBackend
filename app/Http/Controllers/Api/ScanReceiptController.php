@@ -260,7 +260,7 @@ class ScanReceiptController extends Controller
             Log::error("Background Scan failed for Reimbursement ID {$reimbursement->id}: " . $e->getMessage());
             
             $note = trim(str_replace('Memproses analisa AI di layar belakang...', '', $reimbursement->note));
-            $failureMsg = "Analisa otomatis gagal, silakan isi data secara manual.";
+            $failureMsg = "Analisa otomatis gagal: " . $e->getMessage() . " | Silakan isi data secara manual.";
             $reimbursement->update([
                 'note' => $note ? $note . "\n" . $failureMsg : $failureMsg
             ]);
