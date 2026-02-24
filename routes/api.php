@@ -141,6 +141,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // AI Receipt Scanning
     Route::post('/scan-receipt', [ScanReceiptController::class, 'store']);
+    Route::post('/reimbursements/draft-scan', [ScanReceiptController::class, 'draftScan']);
 
     // App Version Management (admin only)
     Route::post('/app-version', [AppVersionController::class, 'store']);
