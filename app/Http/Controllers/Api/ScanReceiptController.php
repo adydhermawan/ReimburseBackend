@@ -40,13 +40,12 @@ class ScanReceiptController extends Controller
             $mimeType = $file->getMimeType() ?? 'image/jpeg';
             $data = $scanner->scan($path, $mimeType, $categories);
 
-            // Get latest client used by this user
+            // Get latest client used by this user to prioritize over AI's merchant name
+            // Users prefer the Client field to default to their last used one
             $latestReimburse = \App\Models\Reimbursement::where('user_id', $request->user()->id)
-                ->latest()
+                ->latest('id')
                 ->first();
             
-            // If we have a latest reimbursement, use its client name as default
-            // But only if we can resolve that client name
             if ($latestReimburse && $latestReimburse->client) {
                  $data['merchant_name'] = $latestReimburse->client->name; // Override merchant_name with latest client for "Client" field
             }
@@ -216,8 +215,16 @@ class ScanReceiptController extends Controller
                 $updateData['transaction_date'] = $data['transaction_date'];
             }
             
-            // Handle client update if finding merchant name
-            if (!empty($data['merchant_name'])) {
+            // Handle client update if finding merchant name OR if we have a default latest client
+            // The user prefers the 'Client' field to default to the latest reimbursement's client
+            $latestReimburse = \App\Models\Reimbursement::where('user_id', $reimbursement->user_id)
+                ->where('id', '!=', $reimbursement->id)
+                ->latest('id')
+                ->first();
+
+            if ($latestReimburse && $latestReimburse->client_id) {
+                $updateData['client_id'] = $latestReimburse->client_id;
+            } else if (!empty($data['merchant_name'])) {
                 $client = Client::firstOrCreate(
                     ['name' => $data['merchant_name']],
                     ['created_by' => $reimbursement->user_id, 'is_auto_registered' => true]
