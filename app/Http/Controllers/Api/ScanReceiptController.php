@@ -111,7 +111,7 @@ class ScanReceiptController extends Controller
                 $clientId = $client->id;
             }
             
-            // Create draft reimbursement
+            // Save draft reimbursement
             $reimbursement = Reimbursement::create([
                 'user_id' => $user->id,
                 'client_id' => $clientId,
@@ -123,16 +123,18 @@ class ScanReceiptController extends Controller
                 'status' => Reimbursement::STATUS_PENDING,
             ]);
 
-            // Dispatch background job
-            $provider = config('services.ai.provider', 'gemini');
-            ProcessReceiptScan::dispatch($reimbursement->id, $absolutePath, $mimeType, $provider)->afterResponse();
-
             $reimbursement->load(['client:id,name', 'category:id,name,icon']);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Draft scan started',
+                'message' => 'Draft scan created',
                 'data' => $reimbursement,
+                // We return absolutePath, mimeType, and provider so the client can trigger the process
+                'meta' => [
+                    'absolute_path' => $absolutePath,
+                    'mime_type' => $mimeType,
+                    'provider' => config('services.ai.provider', 'gemini')
+                ]
             ]);
 
         } catch (\Exception $e) {
@@ -140,6 +142,111 @@ class ScanReceiptController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to initiate draft scan. ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Process AI parsing synchronously. Meant to be called in the background by the frontend client.
+     */
+    public function processDraft(Request $request, Reimbursement $reimbursement): JsonResponse
+    {
+        // Ensure user owns reimbursement
+        if ($reimbursement->user_id !== $request->user()->id) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $absolutePath = $request->input('absolute_path');
+        $mimeType = $request->input('mime_type', 'image/jpeg');
+        $provider = $request->input('provider', 'gemini');
+
+        try {
+            Log::info("Starting sync background scan for Reimbursement ID: {$reimbursement->id}");
+            
+            // Fallback: If no absolute path provided by client, try to resolve from DB
+            $disk = config('filesystems.default');
+            if (!$absolutePath) {
+                if ($disk === 'cloudinary' || str_starts_with($reimbursement->image_path, 'http')) {
+                    // This is problematic on Vercel without a pre-saved temp file, we'd have to download it 
+                    // But we expect the client to pass the absolutePath from the draftScan response
+                    return response()->json(['success' => false, 'message' => 'Absolute path is required for cloud storage'], 400);
+                } else {
+                    $absolutePath = \Illuminate\Support\Facades\Storage::path($reimbursement->image_path);
+                }
+            }
+
+            if (!file_exists($absolutePath)) {
+                $reimbursement->update(['note' => "Analisa AI gagal: File gambar tidak ditemukan."]);
+                return response()->json(['success' => false, 'message' => 'Image file not found'], 404);
+            }
+
+            $scanner = $this->getScanner($provider);
+            $categories = \App\Models\Category::active()->pluck('name')->toArray();
+
+            // Perform scan
+            $data = $scanner->scan($absolutePath, $mimeType, $categories);
+            
+            // Clean up temporary local file if we used Cloudinary
+            if ($disk === 'cloudinary' && file_exists($absolutePath) && strpos($absolutePath, 'tmp') !== false) {
+                @unlink($absolutePath);
+            }
+
+            // Prepare update data
+            $updateData = [];
+            
+            if (!empty($data['total_amount'])) {
+                $updateData['amount'] = $data['total_amount'];
+            }
+            
+            if (!empty($data['transaction_date'])) {
+                $updateData['transaction_date'] = $data['transaction_date'];
+            }
+            
+            // Handle client update if finding merchant name
+            if (!empty($data['merchant_name'])) {
+                $client = Client::firstOrCreate(
+                    ['name' => $data['merchant_name']],
+                    ['created_by' => $reimbursement->user_id, 'is_auto_registered' => true]
+                );
+                $updateData['client_id'] = $client->id;
+            }
+
+            // Handle category update
+            if (!empty($data['category_prediction'])) {
+                $category = \App\Models\Category::where('name', $data['category_prediction'])->first();
+                if ($category) {
+                    $updateData['category_id'] = $category->id;
+                    $updateData['category_name'] = null;
+                } else {
+                    $updateData['category_name'] = $data['category_prediction'];
+                }
+            }
+
+            // Remove the draft note
+            $updateData['note'] = null;
+
+            // Apply updates
+            $reimbursement->update($updateData);
+            Log::info("Successfully updated Reimbursement ID: {$reimbursement->id} with AI data.");
+
+            return response()->json([
+                'success' => true,
+                'message' => 'AI Processing complete',
+                'data' => $reimbursement->fresh(['client', 'category'])
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("Background Scan failed for Reimbursement ID {$reimbursement->id}: " . $e->getMessage());
+            
+            $note = trim(str_replace('Memproses analisa AI di layar belakang...', '', $reimbursement->note));
+            $failureMsg = "Analisa otomatis gagal, silakan isi data secara manual.";
+            $reimbursement->update([
+                'note' => $note ? $note . "\n" . $failureMsg : $failureMsg
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'AI Processing failed: ' . $e->getMessage()
             ], 500);
         }
     }
