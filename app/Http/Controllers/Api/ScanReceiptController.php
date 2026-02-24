@@ -196,8 +196,19 @@ class ScanReceiptController extends Controller
             $scanner = $this->getScanner($provider);
             $categories = \App\Models\Category::active()->pluck('name')->toArray();
 
-            // Perform scan
-            $data = $scanner->scan($absolutePath, $mimeType, $categories);
+            // Perform scan with fallback mechanism
+            try {
+                $data = $scanner->scan($absolutePath, $mimeType, $categories);
+            } catch (\Exception $e) {
+                // If the primary provider (e.g. Gemini) fails, try Groq as an ultimate fallback
+                if ($provider !== 'groq') {
+                    Log::warning("Primary AI Scanner ({$provider}) failed. Falling back to Groq. Reason: " . $e->getMessage());
+                    $fallbackScanner = $this->getScanner('groq');
+                    $data = $fallbackScanner->scan($absolutePath, $mimeType, $categories);
+                } else {
+                    throw $e; // If it was already using Groq, bubble the exception up
+                }
+            }
             
             // Clean up temporary local file if we used Cloudinary
             if ($disk === 'cloudinary' && file_exists($absolutePath) && strpos($absolutePath, 'tmp') !== false) {
@@ -277,6 +288,8 @@ class ScanReceiptController extends Controller
         switch ($provider) {
             case 'grok':
                 return new GrokScanner();
+            case 'groq':
+                return new GroqScanner();
             case 'gemini':
             default:
                 return new GeminiScanner();
