@@ -31,11 +31,6 @@ class GeminiScanner implements ReceiptScannerInterface
 If a value is not found, use null. Return raw JSON, no markdown formatting. Do not include a summary.";
 
             $response = Http::post("{$this->baseUrl}?key={$this->apiKey}", [
-                'systemInstruction' => [
-                    'parts' => [
-                        ['text' => 'You are an expert receipt data extractor. Always return JSON.']
-                    ]
-                ],
                 'contents' => [
                     [
                         'parts' => [
@@ -48,11 +43,6 @@ If a value is not found, use null. Return raw JSON, no markdown formatting. Do n
                             ]
                         ]
                     ]
-                ],
-                'generationConfig' => [
-                    'temperature' => 0.0,
-                    'maxOutputTokens' => 300,
-                    'responseMimeType' => 'application/json'
                 ]
             ]);
 
