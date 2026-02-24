@@ -47,8 +47,9 @@ If a value is not found, use null. Return raw JSON, no markdown formatting. Do n
             ]);
 
             if ($response->failed()) {
-                Log::error('Gemini API Error: ' . $response->body());
-                throw new \Exception('Failed to scan receipt with Gemini.');
+                $errorBody = $response->body();
+                Log::error('Gemini API Error: ' . $errorBody);
+                throw new \Exception('Failed to scan receipt with Gemini. Details: ' . $errorBody);
             }
 
             $json = $response->json();
