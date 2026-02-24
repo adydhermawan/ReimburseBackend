@@ -163,21 +163,34 @@ class ScanReceiptController extends Controller
         try {
             Log::info("Starting sync background scan for Reimbursement ID: {$reimbursement->id}");
             
-            // Fallback: If no absolute path provided by client, try to resolve from DB
+            // Fallback: On Vercel serverless, the /tmp file from draftScan might not exist anymore.
+            // So we check if it exists, and if not, we download it from the cloud URL.
             $disk = config('filesystems.default');
-            if (!$absolutePath) {
-                if ($disk === 'cloudinary' || str_starts_with($reimbursement->image_path, 'http')) {
-                    // This is problematic on Vercel without a pre-saved temp file, we'd have to download it 
-                    // But we expect the client to pass the absolutePath from the draftScan response
-                    return response()->json(['success' => false, 'message' => 'Absolute path is required for cloud storage'], 400);
-                } else {
-                    $absolutePath = \Illuminate\Support\Facades\Storage::path($reimbursement->image_path);
-                }
-            }
-
+            
             if (!file_exists($absolutePath)) {
-                $reimbursement->update(['note' => "Analisa AI gagal: File gambar tidak ditemukan."]);
-                return response()->json(['success' => false, 'message' => 'Image file not found'], 404);
+                if ($disk === 'cloudinary' && $reimbursement->image_url) {
+                    // Try to download from Cloudinary to a new temp file
+                    Log::info("Local temp file missing, downloading from Cloudinary: {$reimbursement->image_url}");
+                    $tempPath = sys_get_temp_dir() . '/' . uniqid('receipt_dl_') . '.jpg';
+                    $imageContent = @file_get_contents($reimbursement->image_url);
+                    
+                    if ($imageContent) {
+                        file_put_contents($tempPath, $imageContent);
+                        $absolutePath = $tempPath;
+                    } else {
+                        $reimbursement->update(['note' => "Analisa AI gagal: Tidak dapat mengakses gambar di storage."]);
+                        return response()->json(['success' => false, 'message' => 'Failed to download image from cloud storage'], 500);
+                    }
+                } else if ($disk === 'local' || $disk === 'public') {
+                    $absolutePath = \Illuminate\Support\Facades\Storage::path($reimbursement->image_path);
+                    if (!file_exists($absolutePath)) {
+                        $reimbursement->update(['note' => "Analisa AI gagal: File gambar tidak ditemukan di local storage."]);
+                        return response()->json(['success' => false, 'message' => 'Image file not found locally'], 404);
+                    }
+                } else {
+                    $reimbursement->update(['note' => "Analisa AI gagal: File gambar tidak ditemukan."]);
+                    return response()->json(['success' => false, 'message' => 'Image file not found'], 404);
+                }
             }
 
             $scanner = $this->getScanner($provider);
