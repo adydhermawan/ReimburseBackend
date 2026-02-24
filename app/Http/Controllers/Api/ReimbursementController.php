@@ -224,9 +224,24 @@ class ReimbursementController extends Controller
                 $reimbursement->image_path = $request->file('image')->store($directory);
             }
 
+            // If category_id is not provided but category_name is, find or create the category
+            if (empty($validated['category_id']) && !empty($validated['category_name'])) {
+                $category = Category::firstOrCreate(
+                    ['name' => $validated['category_name']],
+                    [
+                        'is_active' => true,
+                        'icon' => 'heroicon-o-document-text',
+                        'description' => 'Created from mobile app edit',
+                    ]
+                );
+                $validated['category_id'] = $category->id;
+            }
+
             // Update other fields
             if (isset($validated['category_id'])) {
                 $reimbursement->category_id = $validated['category_id'];
+                // optionally clear category_name fallback if moving to a hard linked category
+                $reimbursement->category_name = null;
             }
             if (isset($validated['amount'])) {
                 $reimbursement->amount = $validated['amount'];
