@@ -100,4 +100,30 @@ class AuthController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Update user profile settings.
+     */
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'preferred_ai_model' => 'nullable|string|max:255',
+        ]);
+
+        if (array_key_exists('preferred_ai_model', $validated)) {
+            $user->preferred_ai_model = $validated['preferred_ai_model'];
+        }
+
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profil berhasil diperbarui',
+            'data' => [
+                'user' => $user,
+            ],
+        ]);
+    }
 }

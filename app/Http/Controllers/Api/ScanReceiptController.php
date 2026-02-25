@@ -28,9 +28,10 @@ class ScanReceiptController extends Controller
             $file = $request->file('image');
             $path = $file->getRealPath();
 
-            // Resolve the scanner based on ENV or config
+            // Resolve the scanner based on ENV or config and user preference
             $provider = config('services.ai.provider', 'gemini');
-            $scanner = $this->getScanner($provider);
+            $modelName = $request->user()->preferred_ai_model ?? 'gemma-3-27b-it';
+            $scanner = $this->getScanner($provider, $modelName);
 
             // Fetch active categories for AI context
             $categories = \App\Models\Category::active()->pluck('name')->toArray();
@@ -192,7 +193,8 @@ class ScanReceiptController extends Controller
                 }
             }
 
-            $scanner = $this->getScanner($provider);
+            $modelName = $reimbursement->user->preferred_ai_model ?? 'gemma-3-27b-it';
+            $scanner = $this->getScanner($provider, $modelName);
             $categories = \App\Models\Category::active()->pluck('name')->toArray();
 
             // Perform scan
@@ -276,12 +278,12 @@ class ScanReceiptController extends Controller
         }
     }
 
-    protected function getScanner(string $provider): ReceiptScannerInterface
+    protected function getScanner(string $provider, ?string $modelName = null): ReceiptScannerInterface
     {
         switch ($provider) {
             case 'gemini':
             default:
-                return new GeminiScanner();
+                return new GeminiScanner($modelName);
         }
     }
 }
