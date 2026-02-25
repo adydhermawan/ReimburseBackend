@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 class GeminiScanner implements ReceiptScannerInterface
 {
     protected string $apiKey;
-    protected string $baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
+    protected string $baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemma-3-27b-it:generateContent';
 
     public function __construct()
     {
