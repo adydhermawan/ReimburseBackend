@@ -8,8 +8,6 @@ use App\Models\Client;
 use App\Jobs\ProcessReceiptScan;
 use App\Services\AI\ReceiptScannerInterface;
 use App\Services\AI\GeminiScanner;
-use App\Services\AI\GrokScanner;
-use App\Services\AI\GroqScanner;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -197,23 +195,12 @@ class ScanReceiptController extends Controller
             $scanner = $this->getScanner($provider);
             $categories = \App\Models\Category::active()->pluck('name')->toArray();
 
-            // Perform scan with fallback mechanism
+            // Perform scan
             try {
                 $data = $scanner->scan($absolutePath, $mimeType, $categories);
             } catch (\Throwable $e) {
-                // If the primary provider (e.g. Gemini) fails, try Groq as an ultimate fallback
-                if ($provider !== 'groq') {
-                    Log::warning("Primary AI Scanner ({$provider}) failed. Falling back to Groq. Reason: " . $e->getMessage());
-                    $fallbackScanner = $this->getScanner('groq');
-                    
-                    try {
-                        $data = $fallbackScanner->scan($absolutePath, $mimeType, $categories);
-                    } catch (\Throwable $fallbackE) {
-                        throw $fallbackE;
-                    }
-                } else {
-                    throw $e; // If it was already using Groq, bubble the exception up
-                }
+                // If the primary provider (e.g. Gemini) fails, bubble it up. Fallbacks removed since free tiers don't support vision.
+                throw $e;
             }
             
             // Clean up temporary local file if we used Cloudinary
@@ -292,10 +279,6 @@ class ScanReceiptController extends Controller
     protected function getScanner(string $provider): ReceiptScannerInterface
     {
         switch ($provider) {
-            case 'grok':
-                return new GrokScanner();
-            case 'groq':
-                return new GroqScanner();
             case 'gemini':
             default:
                 return new GeminiScanner();
