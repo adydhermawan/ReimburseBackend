@@ -62,7 +62,7 @@ If a value is not found, use null. Return raw JSON, no markdown formatting. Do n
             
             return json_decode($textResponse, true) ?? [];
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Gemini Scanner Exception: ' . $e->getMessage());
             throw $e;
         }

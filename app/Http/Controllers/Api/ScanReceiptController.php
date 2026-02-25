@@ -199,12 +199,17 @@ class ScanReceiptController extends Controller
             // Perform scan with fallback mechanism
             try {
                 $data = $scanner->scan($absolutePath, $mimeType, $categories);
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 // If the primary provider (e.g. Gemini) fails, try Groq as an ultimate fallback
                 if ($provider !== 'groq') {
                     Log::warning("Primary AI Scanner ({$provider}) failed. Falling back to Groq. Reason: " . $e->getMessage());
                     $fallbackScanner = $this->getScanner('groq');
-                    $data = $fallbackScanner->scan($absolutePath, $mimeType, $categories);
+                    
+                    try {
+                        $data = $fallbackScanner->scan($absolutePath, $mimeType, $categories);
+                    } catch (\Throwable $fallbackE) {
+                        throw $fallbackE;
+                    }
                 } else {
                     throw $e; // If it was already using Groq, bubble the exception up
                 }
@@ -267,7 +272,7 @@ class ScanReceiptController extends Controller
                 'data' => $reimbursement->fresh(['client', 'category'])
             ]);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error("Background Scan failed for Reimbursement ID {$reimbursement->id}: " . $e->getMessage());
             
             $note = trim(str_replace('Memproses analisa AI di layar belakang...', '', $reimbursement->note));

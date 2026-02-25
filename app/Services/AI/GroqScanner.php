@@ -66,7 +66,7 @@ class GroqScanner implements ReceiptScannerInterface
             
             return json_decode($content, true) ?? [];
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Groq Scanner Exception: ' . $e->getMessage());
             throw $e;
         }
