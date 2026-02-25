@@ -46,7 +46,7 @@ class GroqScanner implements ReceiptScannerInterface
             ];
 
             $response = Http::timeout(15)->withToken($this->apiKey)->post($this->baseUrl, [
-                'model' => 'llama-3.2-11b-vision-preview', // Vision enabled Groq model
+                'model' => 'qwen/qwen3-32b', // User requested to test this model
                 'messages' => $messages,
                 'temperature' => 0.1,
                 'stream' => false,
