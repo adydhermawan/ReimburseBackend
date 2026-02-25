@@ -9,6 +9,7 @@ use App\Jobs\ProcessReceiptScan;
 use App\Services\AI\ReceiptScannerInterface;
 use App\Services\AI\GeminiScanner;
 use App\Services\AI\GrokScanner;
+use App\Services\AI\GroqScanner;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
