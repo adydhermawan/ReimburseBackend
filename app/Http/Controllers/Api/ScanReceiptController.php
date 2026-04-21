@@ -169,15 +169,16 @@ class ScanReceiptController extends Controller
             if (!file_exists($absolutePath)) {
                 if ($disk === 'cloudinary' && $reimbursement->image_url) {
                     // Try to download from Cloudinary to a new temp file
-                    Log::info("Local temp file missing, downloading from Cloudinary: {$reimbursement->image_url}");
+                    Log::info("ScanReceiptController: Local temp file missing, downloading from Cloudinary: {$reimbursement->image_url}");
                     $tempPath = sys_get_temp_dir() . '/' . uniqid('receipt_dl_') . '.jpg';
                     $downloadResponse = \Illuminate\Support\Facades\Http::get($reimbursement->image_url);
                     
                     if ($downloadResponse->successful() && $downloadResponse->body()) {
                         file_put_contents($tempPath, $downloadResponse->body());
                         $absolutePath = $tempPath;
+                        Log::info("ScanReceiptController: Successfully downloaded image to {$absolutePath}. Size: " . strlen($downloadResponse->body()));
                     } else {
-                        Log::error("Failed to download image from Cloudinary HTTP " . $downloadResponse->status());
+                        Log::error("ScanReceiptController: Failed to download image from Cloudinary HTTP " . $downloadResponse->status() . " Body length: " . strlen($downloadResponse->body()));
                         $reimbursement->update(['note' => "Analisa AI gagal: Tidak dapat mengakses gambar dari penyimpanan cloud."]);
                         return response()->json(['success' => false, 'message' => 'Failed to download image from cloud storage'], 500);
                     }

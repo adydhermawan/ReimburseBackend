@@ -21,7 +21,21 @@ class GeminiScanner implements ReceiptScannerInterface
     public function scan(string $imagePath, string $mimeType = 'image/jpeg', array $categories = []): array
     {
         try {
-            $imageData = base64_encode(file_get_contents($imagePath));
+            Log::info("GeminiScanner: Scanning image at {$imagePath}");
+            
+            if (!file_exists($imagePath)) {
+                Log::error("GeminiScanner: Image file NOT FOUND at {$imagePath}");
+                throw new \Exception("Image file not found for scanning: {$imagePath}");
+            }
+
+            $rawContents = file_get_contents($imagePath);
+            if ($rawContents === false) {
+                Log::error("GeminiScanner: Failed to read file contents at {$imagePath}");
+                throw new \Exception("Failed to read image file contents.");
+            }
+
+            $imageData = base64_encode($rawContents);
+            Log::info("GeminiScanner: Base64 data generated. Length: " . strlen($imageData));
             
             $categoriesString = implode(', ', $categories);
             
