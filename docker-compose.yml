@@ -104,15 +104,6 @@ services:
     networks:
       - reimburse-network
 
-  # Cloudflare Tunnel
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    container_name: reimburse-cloudflared
-    restart: unless-stopped
-    command: tunnel --no-autoupdate run --token eyJhIjoiM2VhZWM0ZmNmYWIyZTdlZDhlMzBjMDE4MGY2YTVjZDUiLCJ0IjoiZDNjYThhODUtODE3OS00ZmUzLWI5ZmYtYTQ5YTZlYWJmMzI3IiwicyI6Ik5qYzJPVGt4TVRVdFpETTFaUzAwWTJZNUxUbGhNREl0TWprMU0yWTFPV1JtT0RaaiJ9
-    networks:
-      - reimburse-network
-
 networks:
   reimburse-network:
     driver: bridge

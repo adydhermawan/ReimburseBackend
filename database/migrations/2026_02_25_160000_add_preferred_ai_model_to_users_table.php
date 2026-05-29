@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('preferred_ai_model')->nullable()->default('gemma-3-27b-it')->after('password');
+            $table->string('preferred_ai_model')->nullable()->default('gemini-3.5-flash')->after('password');
         });
     }
 

@@ -30,7 +30,7 @@ class ScanReceiptController extends Controller
 
             // Resolve the scanner based on ENV or config and user preference
             $provider = config('services.ai.provider', 'gemini');
-            $modelName = $request->user()->preferred_ai_model ?? 'gemma-3-27b-it';
+            $modelName = $request->user()->preferred_ai_model ?? 'gemini-3.5-flash';
             $scanner = $this->getScanner($provider, $modelName);
 
             // Fetch active categories for AI context
@@ -194,7 +194,7 @@ class ScanReceiptController extends Controller
                 }
             }
 
-            $modelName = $reimbursement->user->preferred_ai_model ?? 'gemma-3-27b-it';
+            $modelName = $reimbursement->user->preferred_ai_model ?? 'gemini-3.5-flash';
             $scanner = $this->getScanner($provider, $modelName);
             $categories = \App\Models\Category::active()->pluck('name')->toArray();
 

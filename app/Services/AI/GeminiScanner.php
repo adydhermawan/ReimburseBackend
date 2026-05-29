@@ -10,11 +10,11 @@ class GeminiScanner implements ReceiptScannerInterface
     protected string $apiKey;
     protected string $baseUrl;
 
-    public function __construct(?string $modelName = 'gemma-3-27b-it')
+    public function __construct(?string $modelName = 'gemini-3.5-flash')
     {
         $this->apiKey = config('services.gemini.key');
         
-        $model = empty($modelName) ? 'gemma-3-27b-it' : $modelName;
+        $model = empty($modelName) ? 'gemini-3.5-flash' : $modelName;
         $this->baseUrl = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent";
     }
 
