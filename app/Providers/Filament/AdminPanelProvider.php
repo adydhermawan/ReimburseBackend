@@ -47,10 +47,10 @@ class AdminPanelProvider extends PanelProvider
                 Widgets\AccountWidget::class,
             ])
             ->renderHook(
-                'panels::head.end',
+                'panels::body.end',
                 fn (): string => Blade::render('
-                    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js" defer></script>
-                    <script src="{{ asset("js/pdf-generator.js") }}" defer></script>
+                    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+                    <script src="{{ asset("js/pdf-generator.js") }}"></script>
                 '),
             )
             ->middleware([

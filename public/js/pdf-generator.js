@@ -21,55 +21,82 @@
     };
 
     /**
-     * Load an image as base64 data URL, with CORS handling via proxy.
+     * Load an image as base64 data URL, with CORS handling.
      */
     async function loadImageAsBase64(url) {
         if (!url) return null;
 
         try {
-            const response = await fetch(url, { mode: 'cors' });
-            if (!response.ok) return null;
-            const blob = await response.blob();
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = () => resolve(null);
-                reader.readAsDataURL(blob);
-            });
-        } catch (e) {
-            // If CORS fails, try loading via img element
-            try {
-                return await new Promise((resolve) => {
-                    const img = new Image();
-                    img.crossOrigin = 'anonymous';
-                    img.onload = () => {
+            // Try loading via Image element with crossOrigin
+            return await new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => {
+                    try {
                         const canvas = document.createElement('canvas');
                         canvas.width = img.naturalWidth;
                         canvas.height = img.naturalHeight;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0);
-                        try {
-                            resolve(canvas.toDataURL('image/jpeg', 0.8));
-                        } catch (canvasErr) {
-                            resolve(null);
-                        }
-                    };
-                    img.onerror = () => resolve(null);
-                    img.src = url;
-                });
-            } catch (e2) {
-                return null;
-            }
+                        resolve(canvas.toDataURL('image/jpeg', 0.7));
+                    } catch (e) {
+                        console.warn('[PDF] Canvas export failed for:', url, e);
+                        resolve(null);
+                    }
+                };
+                img.onerror = () => {
+                    console.warn('[PDF] Image load failed for:', url);
+                    resolve(null);
+                };
+                img.src = url;
+            });
+        } catch (e) {
+            console.warn('[PDF] Image loading error:', url, e);
+            return null;
+        }
+    }
+
+    /**
+     * Wait for jsPDF to be available (loaded from CDN).
+     */
+    function waitForJsPDF(maxWait = 10000) {
+        return new Promise((resolve, reject) => {
+            if (window.jspdf) return resolve(window.jspdf);
+
+            const start = Date.now();
+            const interval = setInterval(() => {
+                if (window.jspdf) {
+                    clearInterval(interval);
+                    resolve(window.jspdf);
+                } else if (Date.now() - start > maxWait) {
+                    clearInterval(interval);
+                    reject(new Error('jsPDF library failed to load. Please refresh the page and try again.'));
+                }
+            }, 100);
+        });
+    }
+
+    /**
+     * Show a Filament notification via JS.
+     */
+    function showNotification(title, body, type = 'info') {
+        if (window.Livewire) {
+            // Use Filament's notification system via a custom event
+            window.dispatchEvent(new CustomEvent('filament-pdf-notification', {
+                detail: { title, body, type }
+            }));
+        }
+        // Also show a native alert as fallback for errors
+        if (type === 'danger') {
+            alert(`${title}\n${body || ''}`);
         }
     }
 
     /**
      * Generate PDF from report data.
-     * @param {Object} data - Report data from API
-     * @returns {jsPDF} - The generated PDF document
      */
-    async function generatePdf(data, progressCallback) {
-        const { jsPDF } = window.jspdf;
+    async function generatePdf(data) {
+        const { jsPDF } = await waitForJsPDF();
         const doc = new jsPDF('p', 'mm', 'a4');
         const pageWidth = 210;
         const pageHeight = 297;
@@ -97,7 +124,7 @@
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(11);
         doc.setTextColor(...COLORS.gray);
-        doc.text(`Periode: ${report.period_start} - ${report.period_end}`, pageWidth / 2, y + 3, { align: 'center' });
+        doc.text('Periode: ' + report.period_start + ' - ' + report.period_end, pageWidth / 2, y + 3, { align: 'center' });
 
         y += 8;
         doc.setFillColor(...COLORS.primary);
@@ -156,7 +183,7 @@
         doc.setFontSize(8);
 
         let colX = margin;
-        columns.forEach(col => {
+        columns.forEach(function (col) {
             let textX = colX + 2;
             if (col.align === 'center') textX = colX + col.width / 2;
             if (col.align === 'right') textX = colX + col.width - 2;
@@ -168,7 +195,7 @@
 
         // Table rows
         doc.setFontSize(8);
-        reimbursements.forEach((item, index) => {
+        reimbursements.forEach(function (item, index) {
             // Check if we need a new page
             if (y + rowHeight > pageHeight - 50) {
                 doc.addPage();
@@ -198,12 +225,12 @@
             ];
 
             colX = margin;
-            columns.forEach((col, colIndex) => {
+            columns.forEach(function (col, colIndex) {
                 let textX = colX + 2;
                 if (col.align === 'center') textX = colX + col.width / 2;
                 if (col.align === 'right') textX = colX + col.width - 2;
 
-                let text = rowData[colIndex];
+                let text = rowData[colIndex] || '-';
                 // Truncate long text
                 const maxChars = Math.floor(col.width / 1.8);
                 if (text.length > maxChars) {
@@ -233,7 +260,7 @@
         doc.setFontSize(11);
         doc.text('Total Entry:', margin + 5, y + 8);
         doc.setFont('helvetica', 'normal');
-        doc.text(`${report.entry_count} item`, margin + 35, y + 8);
+        doc.text(report.entry_count + ' item', margin + 35, y + 8);
 
         doc.setFont('helvetica', 'bold');
         doc.text('Total Jumlah:', contentWidth / 2 + margin, y + 8);
@@ -246,7 +273,7 @@
         doc.setTextColor(...COLORS.lightGray);
         doc.setDrawColor(...COLORS.tableBorder);
         doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
-        doc.text(`Generated by Reimburse System | ${data.app_name}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+        doc.text('Generated by Reimburse System | ' + data.app_name, pageWidth / 2, pageHeight - 10, { align: 'center' });
 
         // ============ PAGE 2+: RECEIPT IMAGES ============
         if (reimbursements.length > 0) {
@@ -264,7 +291,7 @@
                 doc.setFontSize(12);
                 doc.setTextColor(...COLORS.primaryDark);
                 doc.text(
-                    `Bukti Transaksi (Halaman ${pageIdx + 1} dari ${totalImagePages})`,
+                    'Bukti Transaksi (Halaman ' + (pageIdx + 1) + ' dari ' + totalImagePages + ')',
                     pageWidth / 2, y + 7, { align: 'center' }
                 );
 
@@ -289,29 +316,24 @@
                     doc.setDrawColor(...COLORS.tableBorder);
                     doc.roundedRect(cellX, cellY, cellWidth, cellHeight, 2, 2, 'S');
 
-                    // Try loading image
-                    if (progressCallback) {
-                        progressCallback(`Loading image ${startIdx + i + 1}/${reimbursements.length}...`);
-                    }
+                    console.log('[PDF] Loading image ' + (startIdx + i + 1) + '/' + reimbursements.length);
 
                     const imageData = item.image_url ? await loadImageAsBase64(item.image_url) : null;
 
                     if (imageData) {
                         try {
-                            // Calculate image dimensions to fit within cell
                             const imgMaxWidth = cellWidth - 8;
                             const imgMaxHeight = cellHeight - 30;
                             doc.addImage(imageData, 'JPEG', cellX + 4, cellY + 4, imgMaxWidth, imgMaxHeight, undefined, 'FAST');
                         } catch (imgErr) {
-                            // Fallback: show placeholder
+                            console.warn('[PDF] addImage failed:', imgErr);
                             doc.setFillColor(...COLORS.bgLight);
                             doc.rect(cellX + 4, cellY + 4, cellWidth - 8, cellHeight - 30, 'F');
                             doc.setTextColor(...COLORS.lightGray);
                             doc.setFontSize(9);
-                            doc.text('Image not available', cellX + cellWidth / 2, cellY + (cellHeight - 30) / 2 + 4, { align: 'center' });
+                            doc.text('Image load error', cellX + cellWidth / 2, cellY + (cellHeight - 30) / 2 + 4, { align: 'center' });
                         }
                     } else {
-                        // No image placeholder
                         doc.setFillColor(...COLORS.bgLight);
                         doc.rect(cellX + 4, cellY + 4, cellWidth - 8, cellHeight - 30, 'F');
                         doc.setTextColor(...COLORS.lightGray);
@@ -327,11 +349,11 @@
                     doc.setTextColor(...COLORS.black);
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(8);
-                    doc.text(`${item.transaction_date} - ${item.client_name}`, cellX + 5, infoBoxY + 5);
+                    doc.text(item.transaction_date + ' - ' + item.client_name, cellX + 5, infoBoxY + 5);
 
                     doc.setFont('helvetica', 'normal');
                     doc.setFontSize(7);
-                    doc.text(`${item.category_name}: ${item.amount_formatted}`, cellX + 5, infoBoxY + 11);
+                    doc.text(item.category_name + ': ' + item.amount_formatted, cellX + 5, infoBoxY + 11);
                 }
 
                 // Footer
@@ -339,7 +361,7 @@
                 doc.setTextColor(...COLORS.lightGray);
                 doc.setDrawColor(...COLORS.tableBorder);
                 doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
-                doc.text(`Generated by Reimburse System | ${data.app_name}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+                doc.text('Generated by Reimburse System | ' + data.app_name, pageWidth / 2, pageHeight - 10, { align: 'center' });
             }
         }
 
@@ -347,72 +369,111 @@
     }
 
     /**
-     * Main entry point: fetch data and generate PDF.
-     * Called from Filament action via Alpine.js / Livewire event.
+     * Main entry: fetch data and generate PDF.
      */
-    window.RecashlyPdfGenerator = {
-        async generate(reportId) {
-            try {
-                // Show loading notification via Filament
-                if (window.Livewire) {
-                    window.Livewire.dispatch('pdf-generating');
-                }
+    async function handleGeneratePdf(reportId) {
+        console.log('[PDF] Starting generation for report:', reportId);
 
-                // Fetch report data
-                const response = await fetch(`/admin/reports/${reportId}/pdf-data`, {
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    credentials: 'same-origin',
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch report data (HTTP ${response.status})`);
-                }
-
-                const result = await response.json();
-                if (!result.success) {
-                    throw new Error(result.error || 'Unknown error');
-                }
-
-                // Generate PDF
-                const doc = await generatePdf(result.data, (msg) => {
-                    console.log('[PDF Generator]', msg);
-                });
-
-                // Download the PDF
-                const filename = `Reimburse_${result.data.report.period_label.replace(/\s+/g, '_')}.pdf`;
-                doc.save(filename);
-
-                // Notify Livewire of success
-                if (window.Livewire) {
-                    window.Livewire.dispatch('pdf-generated', { reportId: reportId });
-                }
-
-                return true;
-            } catch (error) {
-                console.error('[PDF Generator] Error:', error);
-
-                // Notify Livewire of failure
-                if (window.Livewire) {
-                    window.Livewire.dispatch('pdf-generation-failed', { message: error.message });
-                }
-
-                return false;
-            }
-        }
-    };
-
-    // Listen for Livewire dispatch events from Filament actions
-    document.addEventListener('DOMContentLoaded', function () {
-        if (window.Livewire) {
-            window.Livewire.on('trigger-pdf-generation', (params) => {
-                const reportId = Array.isArray(params) ? params[0]?.reportId : params?.reportId;
-                if (reportId) {
-                    window.RecashlyPdfGenerator.generate(reportId);
-                }
+        try {
+            // Fetch report data
+            const response = await fetch('/admin/reports/' + reportId + '/pdf-data', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
             });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('[PDF] API error:', response.status, errorText);
+                throw new Error('Failed to fetch report data (HTTP ' + response.status + ')');
+            }
+
+            const result = await response.json();
+            console.log('[PDF] Data received:', result);
+
+            if (!result.success) {
+                throw new Error(result.error || 'Unknown error from API');
+            }
+
+            // Generate PDF
+            console.log('[PDF] Generating PDF document...');
+            const doc = await generatePdf(result.data);
+
+            // Download
+            const filename = 'Reimburse_' + result.data.report.period_label.replace(/\s+/g, '_') + '.pdf';
+            console.log('[PDF] Saving as:', filename);
+            doc.save(filename);
+
+            console.log('[PDF] Done!');
+            alert('PDF berhasil di-generate!');
+            return true;
+
+        } catch (error) {
+            console.error('[PDF] Generation failed:', error);
+            alert('Gagal generate PDF: ' + error.message);
+            return false;
+        }
+    }
+
+    // Expose globally
+    window.RecashlyPdfGenerator = { generate: handleGeneratePdf };
+
+    // ============ REGISTER LIVEWIRE EVENT LISTENER ============
+    // Livewire 3: use 'livewire:init' event to register listeners
+    function registerLivewireListener() {
+        if (!window.Livewire) {
+            console.warn('[PDF] Livewire not available, retrying...');
+            return false;
+        }
+
+        console.log('[PDF] Registering Livewire event listener');
+        window.Livewire.on('trigger-pdf-generation', function (params) {
+            console.log('[PDF] Livewire event received:', params);
+            // Livewire 3 passes params as array: [{reportId: 123}]
+            var reportId = null;
+            if (Array.isArray(params)) {
+                reportId = params[0] && params[0].reportId;
+            } else if (params && params.reportId) {
+                reportId = params.reportId;
+            }
+
+            if (reportId) {
+                handleGeneratePdf(reportId);
+            } else {
+                console.error('[PDF] No reportId in event params:', params);
+                alert('Error: No report ID received');
+            }
+        });
+        console.log('[PDF] Listener registered successfully');
+        return true;
+    }
+
+    // Try registering via livewire:init (Livewire 3)
+    document.addEventListener('livewire:init', function () {
+        console.log('[PDF] livewire:init fired');
+        registerLivewireListener();
+    });
+
+    // Fallback: also try after DOM is ready (in case livewire:init already fired)
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('[PDF] DOMContentLoaded fired');
+        // Small delay to ensure Livewire is bootstrapped
+        setTimeout(function () {
+            if (window.Livewire && !window._pdfListenerRegistered) {
+                registerLivewireListener();
+                window._pdfListenerRegistered = true;
+            }
+        }, 500);
+    });
+
+    // Final fallback: try on livewire:navigated (SPA navigation in Filament)
+    document.addEventListener('livewire:navigated', function () {
+        console.log('[PDF] livewire:navigated fired');
+        if (!window._pdfListenerRegistered) {
+            registerLivewireListener();
+            window._pdfListenerRegistered = true;
         }
     });
 })();
