@@ -5,7 +5,6 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ReportResource\Pages;
 use App\Models\Report;
 use App\Models\Reimbursement;
-use App\Services\PdfReportService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -176,31 +175,25 @@ class ReportResource extends Resource
                     ->icon('heroicon-o-document-arrow-down')
                     ->color('primary')
                     ->visible(fn (Report $record) => in_array($record->status, ['draft', 'generated']))
-                    ->action(function (Report $record) {
-                        try {
-                            $service = new PdfReportService();
-                            $service->generate($record);
+                    ->action(function (Report $record, $livewire) {
+                        // Dispatch event to trigger client-side PDF generation
+                        $livewire->dispatch('trigger-pdf-generation', reportId: $record->id);
 
-                            Notification::make()
-                                ->title('PDF Generated Successfully')
-                                ->success()
-                                ->send();
-                        } catch (\Exception $e) {
-                            Notification::make()
-                                ->title('Failed to generate PDF')
-                                ->body($e->getMessage())
-                                ->danger()
-                                ->send();
-                        }
+                        Notification::make()
+                            ->title('Generating PDF...')
+                            ->body('PDF is being generated in your browser. Please wait...')
+                            ->info()
+                            ->send();
                     }),
 
                 Tables\Actions\Action::make('downloadPdf')
-                    ->label('Download')
+                    ->label('Download PDF')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
-                    ->visible(fn (Report $record) => $record->pdf_path !== null)
-                    ->url(fn (Report $record) => $record->pdf_url)
-                    ->openUrlInNewTab(),
+                    ->action(function (Report $record, $livewire) {
+                        // Generate PDF client-side for download
+                        $livewire->dispatch('trigger-pdf-generation', reportId: $record->id);
+                    }),
 
                 Tables\Actions\Action::make('markAsPaid')
                     ->label('Mark as Paid')
