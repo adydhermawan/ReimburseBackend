@@ -237,12 +237,65 @@ class ReimbursementResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('change_status')
+                        ->label('Ubah Status')
+                        ->icon('heroicon-o-arrow-path')
+                        ->color('primary')
+                        ->form([
+                            Forms\Components\Select::make('status')
+                                ->label('Status Baru')
+                                ->options([
+                                    'pending' => 'Pending',
+                                    'approved' => 'Approved',
+                                    'rejected' => 'Rejected',
+                                    'in_report' => 'In Report',
+                                    'paid' => 'Paid',
+                                ])
+                                ->required(),
+                        ])
+                        ->action(function ($records, array $data) {
+                            $records->each->update(['status' => $data['status']]);
+
+                            \Filament\Notifications\Notification::make()
+                                ->title('Status berhasil diubah')
+                                ->body($records->count() . ' reimbursement diubah ke status "' . ucfirst($data['status']) . '"')
+                                ->success()
+                                ->send();
+                        })
+                        ->requiresConfirmation()
+                        ->modalHeading('Ubah Status Reimbursement')
+                        ->modalDescription('Pilih status baru untuk reimbursement yang dipilih.')
+                        ->deselectRecordsAfterCompletion(),
                     Tables\Actions\BulkAction::make('approve')
                         ->label('Approve Selected')
                         ->icon('heroicon-o-check')
                         ->color('success')
-                        ->action(fn ($records) => $records->each->update(['status' => 'approved']))
-                        ->requiresConfirmation(),
+                        ->action(function ($records) {
+                            $records->each->update(['status' => 'approved']);
+
+                            \Filament\Notifications\Notification::make()
+                                ->title('Berhasil di-approve')
+                                ->body($records->count() . ' reimbursement berhasil di-approve')
+                                ->success()
+                                ->send();
+                        })
+                        ->requiresConfirmation()
+                        ->deselectRecordsAfterCompletion(),
+                    Tables\Actions\BulkAction::make('reject')
+                        ->label('Reject Selected')
+                        ->icon('heroicon-o-x-mark')
+                        ->color('danger')
+                        ->action(function ($records) {
+                            $records->each->update(['status' => 'rejected']);
+
+                            \Filament\Notifications\Notification::make()
+                                ->title('Berhasil di-reject')
+                                ->body($records->count() . ' reimbursement berhasil di-reject')
+                                ->warning()
+                                ->send();
+                        })
+                        ->requiresConfirmation()
+                        ->deselectRecordsAfterCompletion(),
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
