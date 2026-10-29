@@ -6,8 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Reimbursement;
 use App\Models\Client;
 use App\Jobs\ProcessReceiptScan;
-use App\Services\AI\ReceiptScannerInterface;
-use App\Services\AI\GeminiScanner;
+use App\Services\AI\ScannerFactory;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -28,10 +27,9 @@ class ScanReceiptController extends Controller
             $file = $request->file('image');
             $path = $file->getRealPath();
 
-            // Resolve the scanner based on ENV or config and user preference
-            $provider = config('services.ai.provider', 'gemini');
-            $modelName = $request->user()->preferred_ai_model ?? 'gemini-3.5-flash';
-            $scanner = $this->getScanner($provider, $modelName);
+            // Resolve the scanner from the user's preferred model (Groq by default, Gemini as secondary)
+            $modelName = $request->user()->preferred_ai_model ?? ScannerFactory::DEFAULT_MODEL;
+            $scanner = ScannerFactory::make($modelName);
 
             // Fetch active categories for AI context
             $categories = \App\Models\Category::active()->pluck('name')->toArray();
@@ -53,7 +51,7 @@ class ScanReceiptController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => $data,
-                'provider' => $provider
+                'provider' => $modelName
             ]);
 
         } catch (\Exception $e) {
@@ -132,7 +130,7 @@ class ScanReceiptController extends Controller
                 'meta' => [
                     'absolute_path' => $absolutePath,
                     'mime_type' => $mimeType,
-                    'provider' => config('services.ai.provider', 'gemini')
+                    'provider' => $user->preferred_ai_model ?? ScannerFactory::DEFAULT_MODEL
                 ]
             ]);
 
@@ -157,7 +155,6 @@ class ScanReceiptController extends Controller
 
         $absolutePath = $request->input('absolute_path');
         $mimeType = $request->input('mime_type', 'image/jpeg');
-        $provider = $request->input('provider', 'gemini');
 
         try {
             Log::info("Starting sync background scan for Reimbursement ID: {$reimbursement->id}");
@@ -194,15 +191,15 @@ class ScanReceiptController extends Controller
                 }
             }
 
-            $modelName = $reimbursement->user->preferred_ai_model ?? 'gemini-3.5-flash';
-            $scanner = $this->getScanner($provider, $modelName);
+            $modelName = $reimbursement->user->preferred_ai_model ?? ScannerFactory::DEFAULT_MODEL;
+            $scanner = ScannerFactory::make($modelName);
             $categories = \App\Models\Category::active()->pluck('name')->toArray();
 
             // Perform scan
             try {
                 $data = $scanner->scan($absolutePath, $mimeType, $categories);
             } catch (\Throwable $e) {
-                // If the primary provider (e.g. Gemini) fails, bubble it up. Fallbacks removed since free tiers don't support vision.
+                // If the selected provider fails, bubble it up so the user can retry with another model.
                 throw $e;
             }
             
@@ -276,15 +273,6 @@ class ScanReceiptController extends Controller
                 'success' => false,
                 'message' => 'AI Processing failed: ' . $e->getMessage()
             ], 500);
-        }
-    }
-
-    protected function getScanner(string $provider, ?string $modelName = null): ReceiptScannerInterface
-    {
-        switch ($provider) {
-            case 'gemini':
-            default:
-                return new GeminiScanner($modelName);
         }
     }
 }

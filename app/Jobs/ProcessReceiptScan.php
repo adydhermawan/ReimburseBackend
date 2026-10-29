@@ -4,9 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Reimbursement;
 use App\Models\Category;
-use App\Services\AI\GeminiScanner;
-use App\Services\AI\GrokScanner;
-use App\Services\AI\ReceiptScannerInterface;
+use App\Services\AI\ScannerFactory;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -66,7 +64,7 @@ class ProcessReceiptScan implements ShouldQueue
                 return;
             }
 
-            $scanner = $this->getScanner($this->provider);
+            $scanner = ScannerFactory::make($reimbursement->user->preferred_ai_model);
             $categories = Category::active()->pluck('name')->toArray();
 
             // Perform scan
@@ -133,17 +131,6 @@ class ProcessReceiptScan implements ShouldQueue
                     'note' => $note ? $note . "\n" . $failureMsg : $failureMsg
                 ]);
             }
-        }
-    }
-
-    protected function getScanner(string $provider): ReceiptScannerInterface
-    {
-        switch ($provider) {
-            case 'grok':
-                return new GrokScanner();
-            case 'gemini':
-            default:
-                return new GeminiScanner();
         }
     }
 }
